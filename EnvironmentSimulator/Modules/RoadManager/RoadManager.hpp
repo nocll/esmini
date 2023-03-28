@@ -2673,6 +2673,7 @@ namespace roadmanager
         int    dLaneId;  // delta laneId (increasing left and decreasing to the right)
         double dx;       // delta x (world coordinate system)
         double dy;       // delta y (world coordinate system)
+        double dist;     // equilian distance
     } PositionDiff;
 
     enum class CoordinateSystem
@@ -2706,6 +2707,13 @@ namespace roadmanager
             FASTEST,
             MIN_INTERSECTIONS
         } RouteStrategy;
+
+        // typedef enum: int
+        // {
+        //     FORWARD,
+        //     BACKWARD,
+        //     BOTH
+        // } CheckDirection;
 
         enum class PositionType
         {
@@ -2982,6 +2990,8 @@ namespace roadmanager
         @return true if position found and parameter values are valid, else false
         */
         bool Delta(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
+
+        bool Delta(Position* pos_b, PositionDiff& diff, double maxForwardDist, double maxBackwardDist) const;
 
         /**
         Find out the distance, on specified system and type, between two position objects
@@ -3805,6 +3815,8 @@ namespace roadmanager
         @return 0 on success, -1 on failure e.g. path not found
         */
         int Calculate(double &dist, bool bothDirections = true, double maxDist = LARGE_NUMBER);
+
+        // int Calculate(double &dist, Position::CheckDirection bothDirections, double maxDist = LARGE_NUMBER);
 
     private:
         bool CheckRoad(Road *checkRoad, RoadPath::PathNode *srcNode, Road *fromRoad, int fromLaneId);

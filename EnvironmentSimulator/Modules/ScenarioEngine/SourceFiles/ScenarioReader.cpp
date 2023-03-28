@@ -3756,6 +3756,21 @@ OSCCondition *ScenarioReader::parseOSCCondition(pugi::xml_node conditionNode)
 
                         condition = trigger;
                     }
+                    else if (condition_type == "RelativeClearanceCondition")
+                    {
+                        std::string strTemp;
+
+                        TrigByRelativeClearance * trigger = new TrigByRelativeClearance;
+                        trigger->object_ = ResolveObjectReference(parameters.ReadAttribute(condition_node, "entityRef"));
+                        trigger->distanceForward_ = strtod(parameters.ReadAttribute(condition_node, "distanceForward"));
+                        trigger->from_= strtoi(parameters.ReadAttribute(condition_node, "from"));
+                        trigger->to_ = strtoi(parameters.ReadAttribute(condition_node, "to"));
+                        strTemp = parameters.ReadAttribute(condition_node, "freeSpace");
+                        trigger->freeSpace_ = strTemp == "true"? true:false;
+                        strTemp = parameters.ReadAttribute(condition_node, "oppositeLanes");
+                        trigger->oppositeLanes_ = strTemp == "true"? true:false;
+                        condition = trigger;
+                    }
                     else
                     {
                         LOG_AND_QUIT("Entity condition %s not supported", condition_type.c_str());

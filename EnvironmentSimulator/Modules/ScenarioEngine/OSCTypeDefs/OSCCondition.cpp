@@ -661,8 +661,8 @@ bool TrigByTimeHeadway::CheckCondition(StoryBoard* storyBoard, double sim_time)
         {
             continue;
         }
-
-        if (trigObj->Distance(object_, cs_, relDistType_, freespace_, rel_dist) != 0)
+        roadmanager::PositionDiff diff;
+        if (trigObj->Distance(object_, cs_, relDistType_, freespace_, diff, rel_dist) != 0)
         {
             rel_dist = LARGE_NUMBER;
         }
@@ -720,6 +720,7 @@ bool TrigByTimeToCollision::CheckCondition(StoryBoard* storyBoard, double sim_ti
     for (size_t i = 0; i < triggering_entities_.entity_.size(); i++)
     {
         Object* trigObj = triggering_entities_.entity_[i].object_;
+        roadmanager::PositionDiff diff;
         if (!trigObj->IsActive())
         {
             continue;
@@ -733,12 +734,12 @@ bool TrigByTimeToCollision::CheckCondition(StoryBoard* storyBoard, double sim_ti
             {
                 continue;
             }
-            retVal = trigObj->Distance(object_, cs_, relDistType_, freespace_, rel_dist);
+            retVal = trigObj->Distance(object_, cs_, relDistType_, freespace_, diff, rel_dist);
         }
         else
         {
             roadmanager::Position* pos = position_->GetRMPos();
-            retVal                     = trigObj->Distance(pos->GetX(), pos->GetY(), cs_, relDistType_, freespace_, rel_dist);
+            retVal                     = trigObj->Distance(pos->GetX(), pos->GetY(), cs_, relDistType_, freespace_, diff, rel_dist);
         }
         if (retVal != 0)
         {
@@ -926,8 +927,8 @@ bool TrigByDistance::CheckCondition(StoryBoard* storyBoard, double sim_time)
         {
             continue;
         }
-
-        if (trigObj->Distance(pos->GetX(), pos->GetY(), cs_, relDistType_, freespace_, dist_) != 0)
+        roadmanager::PositionDiff diff;
+        if (trigObj->Distance(pos->GetX(), pos->GetY(), cs_, relDistType_, freespace_, diff, dist_) != 0)
         {
             dist_ = LARGE_NUMBER;
         }
@@ -975,6 +976,7 @@ bool TrigByRelativeDistance::CheckCondition(StoryBoard* storyBoard, double sim_t
 
     for (size_t i = 0; i < triggering_entities_.entity_.size(); i++)
     {
+        roadmanager::PositionDiff diff;
         Object* trigObj = triggering_entities_.entity_[i].object_;
         if (!(trigObj->IsActive() && object_->IsActive()))
         {
@@ -983,7 +985,7 @@ bool TrigByRelativeDistance::CheckCondition(StoryBoard* storyBoard, double sim_t
 
         roadmanager::CoordinateSystem cs = cs_;
 
-        if (trigObj->Distance(object_, cs, relDistType_, freespace_, rel_dist_) != 0)
+        if (trigObj->Distance(object_, cs, relDistType_, freespace_, diff, rel_dist_) != 0)
         {
             rel_dist_ = LARGE_NUMBER;
         }
@@ -1484,4 +1486,42 @@ void TrigByRelativeSpeed::Log()
         Rule2Str(rule_).c_str(),
         value_,
         Edge2Str().c_str());
+}
+
+bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_time)
+{
+    (void)storyBoard;
+    (void)sim_time;
+
+
+    bool result = false;
+
+    for (size_t i = 0; i < storyBoard->entities_->object_.size(); i++)
+    {
+        double maxDist = distanceForward_ > distanceBackward ? distanceForward_:distanceBackward;
+
+        Object* pivot_obj = storyBoard->entities_->object_[i];
+        if (pivot_obj == nullptr || pivot_obj == object_)
+        {
+            continue;
+        }
+        double eculidianDistance = sqrt(pow(pivot_obj->pos_.GetX()- object_->pos_.GetX(),2) + pow(pivot_obj->pos_.GetY()- object_->pos_.GetY(),2));
+        LOG("distance:%.2f",eculidianDistance);
+        if (eculidianDistance <= distanceForward_ || eculidianDistance <= distanceBackward)
+        {
+            roadmanager::PositionDiff diff;
+            // if (object_->pos_.Delta(&pivot_obj->pos_, diff, distanceForward_, distanceBackward) == true)
+            if (object_->Distance(pivot_obj->pos_.GetX(), pivot_obj->pos_.GetY(), CoordinateSystem::CS_ROAD,RelativeDistanceType::REL_DIST_EUCLIDIAN, freeSpace_, diff, maxDist) == 0)
+            {
+                result = true;
+            }
+        }
+        if (EvalDone(result, triggering_entity_rule_))
+        {
+            break;
+        }
+
+    }
+
+    return result;
 }

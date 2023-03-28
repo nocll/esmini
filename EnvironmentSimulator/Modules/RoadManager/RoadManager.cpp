@@ -4742,6 +4742,18 @@ bool RoadPath::CheckRoad(Road* checkRoad, RoadPath::PathNode* srcNode, Road* fro
     return true;
 }
 
+// int RoadPath::Calculate(double& dist, bool bothDirections, double maxDist)
+// {
+//     if (bothDirections)
+//     {
+        // return Calculate(dist, Position::CheckDirection::BOTH, maxDist);
+//     }
+//     else
+//     {
+//         return Calculate(dist, Position::CheckDirection::FORWARD, maxDist);
+//     }
+// }
+
 int RoadPath::Calculate(double& dist, bool bothDirections, double maxDist)
 {
     OpenDrive* odr         = startPos_->GetOpenDrive();
@@ -4789,7 +4801,7 @@ int RoadPath::Calculate(double& dist, bool bothDirections, double maxDist)
                 link          = pivotRoad->GetLink(LinkType::SUCCESSOR);  // Find link to previous road or junction
             }
         }
-        else
+        else //if (bothDirections == Position::CheckDirection::FORWARD)
         {
             // Look only in forward direction, w.r.t. entity heading
             if (startPos_->GetHRelative() < M_PI_2 || startPos_->GetHRelative() > 3 * M_PI_2)
@@ -4805,6 +4817,22 @@ int RoadPath::Calculate(double& dist, bool bothDirections, double maxDist)
                 link          = pivotRoad->GetLink(LinkType::PREDECESSOR);  // Find link to previous road or junction
             }
         }
+        // else
+        // {
+        //     // Look only in forward direction, w.r.t. entity heading
+        //     if (startPos_->GetHRelative() < M_PI_2 || startPos_->GetHRelative() > 3 * M_PI_2)
+        //     {
+        //         // Along road direction
+        //         contact_point = ContactPointType::CONTACT_POINT_START;
+        //         link          = pivotRoad->GetLink(LinkType::SUCCESSOR);  // Find link to next road or junction
+        //     }
+        //     else
+        //     {
+        //         // Opposite road direction
+        //         contact_point = ContactPointType::CONTACT_POINT_END;
+        //         link          = pivotRoad->GetLink(LinkType::PREDECESSOR);  // Find link to previous road or junction
+        //     }
+        // }
 
         if (link)
         {
@@ -4865,6 +4893,13 @@ int RoadPath::Calculate(double& dist, bool bothDirections, double maxDist)
                 dist *= -1;
             }
         }
+
+        // // negative distance and forward direction means vehicle behind
+        // if (dist < 0 && bothDirections == Position::CheckDirection::FORWARD)
+        // {
+        //     dist = 0;
+        //     return -1;
+        // }
 
         return 0;
     }
@@ -9082,13 +9117,59 @@ void Position::SetTrajectory(RMTrajectory* trajectory)
     s_trajectory_ = 0;
 }
 
-bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
+bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const{
+    if (bothDirections)
+    {
+        return Delta(pos_b, diff, maxDist, maxDist);
+    }
+    else
+    {
+        return Delta(pos_b, diff, maxDist, 0.0);
+    }
+}
+
+bool Position::Delta(Position* pos_b, PositionDiff& diff, double maxDistForward, double maxDistBackward) const
 {
     double dist = 0;
     bool   found;
+    // int direction_;
+    int maxDist ;
+
+    // if (maxDistForward > SMALL_NUMBER)
+    // {
+    //     direction_     = Position::CheckDirection::FORWARD;
+    // }
+    // else if (maxDistBackward > SMALL_NUMBER)
+    // {
+    //     direction_     = Position::CheckDirection::BACKWARD;
+    // }
+    // else
+    // {
+    //     direction_     = Position::CheckDirection::BOTH;
+    // }
+    maxDist = maxDistForward > maxDistBackward ? maxDistForward:maxDistBackward;
 
     RoadPath* path = new RoadPath(this, pos_b);
-    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && dist < maxDist);
+    found          = (path->Calculate(dist, maxDist) == 0 && abs(dist) < maxDist);
+
+    // if (found)
+    // {
+    //     if (direction_ == Position::CheckDirection::FORWARD && dist < maxDistForward)
+    //     {
+    //         found = true;
+    //     }
+    //     else if (direction_ == Position::CheckDirection::BACKWARD && abs(dist) < maxDistBackward)
+    //     {
+    //         found = true;
+    //     }
+    //     else if ((direction_ == Position::CheckDirection::BOTH && abs(dist) < maxDistForward) && dist < maxDistForward)
+    //     {
+    //         found = true;
+    //     }
+
+    // }
+
+
     if (found)
     {
         int    laneIdB = pos_b->GetLaneId();

@@ -668,10 +668,10 @@ double Object::FreeSpaceDistancePoint(double x, double y, double* latDist, doubl
     return minDist;
 }
 
-int Object::FreeSpaceDistancePointRoadLane(double x, double y, double* latDist, double* longDist, CoordinateSystem cs)
+int Object::FreeSpaceDistancePointRoadLane(double x, double y, CoordinateSystem cs, PositionDiff& pos_diff)
 {
-    *latDist  = LARGE_NUMBER;
-    *longDist = LARGE_NUMBER;
+    pos_diff.ds = LARGE_NUMBER;
+    pos_diff.dt = LARGE_NUMBER;
 
     if (cs != CoordinateSystem::CS_LANE && cs != CoordinateSystem::CS_ROAD)
     {
@@ -719,7 +719,7 @@ int Object::FreeSpaceDistancePointRoadLane(double x, double y, double* latDist, 
     double       minDS = LARGE_NUMBER;
     double       maxDT = 0.0;
     double       minDT = LARGE_NUMBER;
-    PositionDiff posDiff;
+
     for (int j = 0; j < 4; j++)
     {
         pos[j] = pos_;
@@ -730,45 +730,45 @@ int Object::FreeSpaceDistancePointRoadLane(double x, double y, double* latDist, 
             return -1;
         }
 
-        if (pos[j].Delta(&pointPos, posDiff) == false)
+        if (pos[j].Delta(&pointPos, pos_diff) == false)
         {
             return -1;
         }
 
-        if (j == 0 || fabs(posDiff.ds) < fabs(minDS))
+        if (j == 0 || fabs(pos_diff.ds) < fabs(minDS))
         {
-            minDS = posDiff.ds;
+            minDS = pos_diff.ds;
         }
 
-        if (j == 0 || fabs(posDiff.dt) < fabs(minDT))
+        if (j == 0 || fabs(pos_diff.dt) < fabs(minDT))
         {
-            minDT = posDiff.dt;
+            minDT = pos_diff.dt;
         }
 
-        if (j == 0 || fabs(posDiff.ds) > fabs(maxDS))
+        if (j == 0 || fabs(pos_diff.ds) > fabs(maxDS))
         {
-            maxDS = posDiff.ds;
+            maxDS = pos_diff.ds;
         }
 
-        if (j == 0 || fabs(posDiff.dt) > fabs(maxDT))
+        if (j == 0 || fabs(pos_diff.dt) > fabs(maxDT))
         {
-            maxDT = posDiff.dt;
+            maxDT = pos_diff.dt;
         }
     }
 
-    *longDist = minDS;
-    *latDist  = minDT;
+    pos_diff.ds = minDS;
+    pos_diff.dt = minDT;
 
     // Check for overlap
     if (SIGN(minDS) != SIGN(maxDS))
     {
         // Overlap
-        *longDist = 0.0;
+        pos_diff.ds = 0.0;
     }
     if (SIGN(minDT) != SIGN(maxDT))
     {
         // Overlap
-        *latDist = 0.0;
+        pos_diff.dt = 0.0;
     }
 
     return 0;
@@ -912,38 +912,37 @@ int Object::Distance(Object*                           target,
                      roadmanager::CoordinateSystem     cs,
                      roadmanager::RelativeDistanceType relDistType,
                      bool                              freeSpace,
-                     double&                           dist,
+                     PositionDiff&                     pos_diff,
                      double                            maxDist)
 {
     (void)maxDist;
     if (freeSpace)
     {
-        double latDist, longDist;
 
         if (cs == roadmanager::CoordinateSystem::CS_ENTITY || relDistType == RelativeDistanceType::REL_DIST_EUCLIDIAN ||
             relDistType == RelativeDistanceType::REL_DIST_CARTESIAN)
         {
             // Get Cartesian/Euclidian distance
-            dist = FreeSpaceDistance(target, &latDist, &longDist);
+            pos_diff.dist = FreeSpaceDistance(target, &pos_diff.dt, &pos_diff.ds);
 
             // sign indicates target being in front (+) or behind (-)
-            dist *= SIGN(longDist);
+            pos_diff.dist *= SIGN(pos_diff.ds);
 
             if (cs == roadmanager::CoordinateSystem::CS_ENTITY)
             {
                 if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    dist = latDist;
+                    pos_diff.dt = pos_diff.dt;
                 }
                 else if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    dist = longDist;
+                    pos_diff.ds = pos_diff.ds;
                 }
             }
         }
         else if (cs == CoordinateSystem::CS_ROAD || cs == CoordinateSystem::CS_LANE)
         {
-            if (FreeSpaceDistanceObjectRoadLane(target, &latDist, &longDist, cs) != 0)
+            if (FreeSpaceDistanceObjectRoadLane(target, &pos_diff.dt, &pos_diff.ds, cs) != 0)
             {
                 return -1;
             }
@@ -951,11 +950,11 @@ int Object::Distance(Object*                           target,
             {
                 if (relDistType == RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    dist = latDist;
+                    pos_diff.dt = pos_diff.dt;
                 }
                 else if (relDistType == RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    dist = longDist;
+                    pos_diff.ds = pos_diff.ds;
                 }
                 else
                 {
@@ -972,7 +971,7 @@ int Object::Distance(Object*                           target,
     }
     else  // not freeSpace
     {
-        return pos_.Distance(&target->pos_, cs, relDistType, dist);
+        return pos_.Distance(&target->pos_, cs, relDistType, pos_diff.dist);
     }
 
     return 0;
@@ -983,37 +982,36 @@ int Object::Distance(double                            x,
                      roadmanager::CoordinateSystem     cs,
                      roadmanager::RelativeDistanceType relDistType,
                      bool                              freeSpace,
-                     double&                           dist,
+                     PositionDiff&                     pos_diff,
                      double                            maxDist)
 {
     if (freeSpace)
     {
-        double latDist, longDist;
 
         if (cs == roadmanager::CoordinateSystem::CS_ENTITY || relDistType == RelativeDistanceType::REL_DIST_EUCLIDIAN ||
             relDistType == RelativeDistanceType::REL_DIST_CARTESIAN)
         {
             // Get Cartesian/Euclidian distance
-            dist = FreeSpaceDistancePoint(x, y, &latDist, &longDist);
+            pos_diff.dist = FreeSpaceDistancePoint(x, y, &pos_diff.ds, &pos_diff.dt);
 
             // sign indicates target being in front (+) or behind (-)
-            dist *= SIGN(longDist);
+            pos_diff.dist *= SIGN(pos_diff.ds);
 
             if (cs == roadmanager::CoordinateSystem::CS_ENTITY)
             {
                 if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    dist = latDist;
+                    pos_diff.dist = pos_diff.dt;
                 }
                 else if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    dist = longDist;
+                    pos_diff.dist = pos_diff.ds;
                 }
             }
         }
         else if (cs == CoordinateSystem::CS_ROAD || cs == CoordinateSystem::CS_LANE)
         {
-            if (FreeSpaceDistancePointRoadLane(x, y, &latDist, &longDist, cs) != 0)
+            if (FreeSpaceDistancePointRoadLane(x, y, cs, pos_diff) != 0)
             {
                 return -1;
             }
@@ -1021,11 +1019,11 @@ int Object::Distance(double                            x,
             {
                 if (relDistType == RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    dist = latDist;
+                    pos_diff.dist = pos_diff.dt;
                 }
                 else if (relDistType == RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    dist = longDist;
+                    pos_diff.dist = pos_diff.ds;
                 }
                 else
                 {
@@ -1042,7 +1040,7 @@ int Object::Distance(double                            x,
     }
     else  // not freeSpace
     {
-        return pos_.Distance(x, y, cs, relDistType, dist, maxDist);
+        return pos_.Distance(x, y, cs, relDistType, pos_diff.dist, maxDist);
     }
 
     return 0;

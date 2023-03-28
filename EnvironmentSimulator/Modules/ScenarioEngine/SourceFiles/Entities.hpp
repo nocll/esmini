@@ -280,8 +280,8 @@ namespace scenarioengine
         */
         double FreeSpaceDistancePoint(double x, double y, double* latDist, double* longDist);
 
-        int FreeSpaceDistancePointRoadLane(double x, double y, double* latDist, double* longDist, roadmanager::CoordinateSystem cs);
-        int FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, double* longDist, roadmanager::CoordinateSystem cs);
+        int FreeSpaceDistancePointRoadLane(double x, double y, roadmanager::CoordinateSystem cs, roadmanager::PositionDiff& pos_diff);
+        int FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, double* longDist,roadmanager::CoordinateSystem cs);
 
         /**
         Measure the distance to provided target object
@@ -289,14 +289,14 @@ namespace scenarioengine
         @param cs CoordinateSystem, see roadmanager::CoordinateSystem
         @param relDistType, see roadmanager::RelativeDistanceType
         @param freeSpace, measure free distance between bounding boxes or just refpoint to refpoint
-        @param dist Distance (output parameter)
+        @param pos_diff position difference (output parameter)
         @return 0 if position found and parameter values are valid, else -1
         */
         int Distance(Object*                           target,
                      roadmanager::CoordinateSystem     cs,
                      roadmanager::RelativeDistanceType relDistType,
                      bool                              freeSpace,
-                     double&                           dist,
+                     roadmanager::PositionDiff&        pos_diff,
                      double                            maxDist = LARGE_NUMBER);
 
         /**
@@ -306,7 +306,6 @@ namespace scenarioengine
         @param cs CoordinateSystem, see roadmanager::CoordinateSystem
         @param relDistType, see roadmanager::RelativeDistanceType
         @param freeSpace, measure free distance between bounding boxes or just refpoint to refpoint
-        @param dist Distance (output parameter)
         @return 0 if position found and parameter values are valid, else -1
         */
         int Distance(double                            x,
@@ -314,7 +313,7 @@ namespace scenarioengine
                      roadmanager::CoordinateSystem     cs,
                      roadmanager::RelativeDistanceType relDistType,
                      bool                              freeSpace,
-                     double&                           dist,
+                     roadmanager::PositionDiff&        pos_diff,
                      double                            maxDist = LARGE_NUMBER);
 
         enum class OverlapType
