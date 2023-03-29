@@ -365,8 +365,10 @@ int ControllerALKS_R157SM::Model::Process(ObjectInfo& info)
             info.dLaneId = diff.dLaneId;
 
             // Now calculate the exact longitudinal and lateral distance
-            if (veh_->FreeSpaceDistanceObjectRoadLane(info.obj, &info.dist_lat, &info.dist_long, roadmanager::CoordinateSystem::CS_ROAD) == 0)
+            if (veh_->FreeSpaceDistanceObjectRoadLane(info.obj, roadmanager::CoordinateSystem::CS_ROAD, diff) == 0)
             {
+                info.dist_lat = diff.dt;
+                info.dist_long = diff.ds;
                 double veh_v_s, veh_v_t, obj_v_s, obj_v_t;
                 veh_->pos_.GetVelTS(veh_v_t, veh_v_s);
                 info.obj->pos_.GetVelTS(obj_v_t, obj_v_s);

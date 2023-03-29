@@ -24,7 +24,7 @@
       <ScenarioObject name="Ego">
          <CatalogReference catalogName="VehicleCatalog" entryName="$HostVehicle"/>
       </ScenarioObject>
-      <ScenarioObject name="OverTaker">
+      <ScenarioObject name="Target">
          <CatalogReference catalogName="VehicleCatalog" entryName="$TargetVehicle"/>
       </ScenarioObject>
       <ScenarioObject name="TargetRef">
@@ -53,26 +53,7 @@
                     </TeleportAction>
                </PrivateAction>
             </Private>
-            <Private entityRef="OverTaker">
-               <PrivateAction>
-                  <LongitudinalAction>
-                     <SpeedAction>
-                        <SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="0.0"/>
-                        <SpeedActionTarget>
-                           <AbsoluteTargetSpeed value="10"/>
-                        </SpeedActionTarget>
-                     </SpeedAction>
-                  </LongitudinalAction>
-               </PrivateAction>
-               <PrivateAction>
-                    <TeleportAction>
-                        <Position>
-                            <LanePosition roadId="1" laneId="-1" offset="0" s="10"/>
-                        </Position>
-                    </TeleportAction>
-               </PrivateAction>
-            </Private>
-            <Private entityRef="TargetRef">
+            <Private entityRef="Target">
                <PrivateAction>
                   <LongitudinalAction>
                      <SpeedAction>
@@ -91,13 +72,32 @@
                     </TeleportAction>
                </PrivateAction>
             </Private>
+            <Private entityRef="TargetRef">
+               <PrivateAction>
+                  <LongitudinalAction>
+                     <SpeedAction>
+                        <SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="0.0"/>
+                        <SpeedActionTarget>
+                           <AbsoluteTargetSpeed value="10"/>
+                        </SpeedActionTarget>
+                     </SpeedAction>
+                  </LongitudinalAction>
+               </PrivateAction>
+               <PrivateAction>
+                    <TeleportAction>
+                        <Position>
+                            <LanePosition roadId="1" laneId="-2" offset="0" s="10"/>
+                        </Position>
+                    </TeleportAction>
+               </PrivateAction>
+            </Private>
          </Actions>
       </Init>
       <Story name="RelativeClearanceStory">
          <Act name="RelativeClearanceAct">
-            <ManeuverGroup maximumExecutionCount="1" name="EgoSequence">
+            <ManeuverGroup maximumExecutionCount="1" name="TargetRefSequence">
                <Actors selectTriggeringEntities="false">
-                  <EntityRef entityRef="Ego"/>
+                  <EntityRef entityRef="TargetRef"/>
                </Actors>
                <Maneuver name="RelativeClearanceManeuver">
                   <Event name="RelativeClearanceEvent" priority="overwrite">
@@ -118,12 +118,42 @@
                            <Condition name="RelativeClearanceCondition" delay="0" conditionEdge="rising">
                               <ByEntityCondition>
                                  <TriggeringEntities triggeringEntitiesRule="any">
-                                    <EntityRef entityRef="OverTaker"/>
+                                    <EntityRef entityRef="TargetRef"/>
                                  </TriggeringEntities>
                                  <EntityCondition>
-                                    <RelativeClearanceCondition distanceForward="80" from = "1" to = "2" freeSpace="true" oppositeLanes = "false" entityRef="OverTaker"/>
+                                    <RelativeClearanceCondition distanceForward="80" from = "1" to = "2" freeSpace="true" oppositeLanes = "false" entityRef="TargetRef"/>
                                  </EntityCondition>
                               </ByEntityCondition>
+                           </Condition>
+                        </ConditionGroup>
+                     </StartTrigger>
+                  </Event>
+               </Maneuver>
+            </ManeuverGroup>
+            <ManeuverGroup maximumExecutionCount="1" name="TargetSequence">
+               <Actors selectTriggeringEntities="false">
+                  <EntityRef entityRef="Target"/>
+               </Actors>
+               <Maneuver name="TargetManeuver">
+                  <Event name="TargetEvent" priority="overwrite">
+                     <Action name="TargetAction">
+                        <PrivateAction>
+                           <LongitudinalAction>
+                              <SpeedAction>
+                                 <SpeedActionDynamics dynamicsShape="linear" value="-5" dynamicsDimension="rate"/>
+                                 <SpeedActionTarget>
+                                    <AbsoluteTargetSpeed value="20"/>
+                                 </SpeedActionTarget>
+                              </SpeedAction>
+                           </LongitudinalAction>
+                        </PrivateAction>
+                     </Action>
+                     <StartTrigger>
+                        <ConditionGroup>
+                           <Condition name="SetOverrideActionTrigger3" delay="0" conditionEdge="none">
+                              <ByValueCondition>
+                                 <SimulationTimeCondition value="5" rule="greaterThan"/>
+                              </ByValueCondition>
                            </Condition>
                         </ConditionGroup>
                      </StartTrigger>
@@ -145,7 +175,7 @@
           <ConditionGroup>
               <Condition conditionEdge="none" delay="0" name="simulationEndEventDone">
                   <ByValueCondition>
-                      <SimulationTimeCondition rule="greaterThan" value="7"/>
+                      <SimulationTimeCondition rule="greaterThan" value="20"/>
                   </ByValueCondition>
               </Condition>
           </ConditionGroup>

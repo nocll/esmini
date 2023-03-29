@@ -2991,8 +2991,6 @@ namespace roadmanager
         */
         bool Delta(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
 
-        bool Delta(Position* pos_b, PositionDiff& diff, double maxForwardDist, double maxBackwardDist) const;
-
         /**
         Find out the distance, on specified system and type, between two position objects
         @param pos_b The position from which to subtract the current position (this position object)

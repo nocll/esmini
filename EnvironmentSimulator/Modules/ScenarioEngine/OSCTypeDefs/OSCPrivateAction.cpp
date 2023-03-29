@@ -1458,12 +1458,11 @@ void LongDistanceAction::Start(double simTime, double dt)
     {
         // Find out current displacement, and apply it
         double distance;
+        roadmanager::PositionDiff diff;
         if (freespace_)
         {
-            double latDist  = 0;
-            double longDist = 0;
-            object_->FreeSpaceDistance(target_object_, &latDist, &longDist);
-            distance = longDist;
+            object_->FreeSpaceDistance(target_object_, diff);
+            distance = diff.ds;
         }
         else
         {
@@ -1500,12 +1499,12 @@ void LongDistanceAction::Step(double simTime, double)
 
     // Find out current distance
     double distance;
+
     if (freespace_)
     {
-        double latDist  = 0;
-        double longDist = 0;
-        object_->FreeSpaceDistance(target_object_, &latDist, &longDist);
-        distance = longDist;
+        roadmanager::PositionDiff diff;
+        object_->FreeSpaceDistance(target_object_, diff);
+        distance = diff.ds;
     }
     else
     {

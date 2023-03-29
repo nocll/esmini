@@ -244,11 +244,11 @@ namespace scenarioengine
                 @param target The object to check
                 @return true if bounding boxes overlap else false
         */
-        bool CollisionAndRelativeDistLatLong(Object* target, double* distLat, double* distLong);
+        bool CollisionAndRelativeDistLatLong(Object* target, roadmanager::PositionDiff* pos_diff);
 
         bool Collision(Object* target)
         {
-            return CollisionAndRelativeDistLatLong(target, nullptr, nullptr);
+            return CollisionAndRelativeDistLatLong(target, nullptr);
         }
 
         /**
@@ -264,10 +264,10 @@ namespace scenarioengine
                 based on closest distance between the bounding boxes
                 @param target The object to check
                 @param latDist Returns lateral distance to target object
-                @param longDist Returns longitudinal distance to target object
+                @param pos_diff position difference (output parameter)
                 @return distance The free-space Euclidean distance between objects (0 if collision)
         */
-        double FreeSpaceDistance(Object* target, double* latDist, double* longDist);
+        double FreeSpaceDistance(Object* target, roadmanager::PositionDiff& pos_diff);
 
         /**
                 Measure the free-space distance to provided target 2D position
@@ -281,7 +281,7 @@ namespace scenarioengine
         double FreeSpaceDistancePoint(double x, double y, double* latDist, double* longDist);
 
         int FreeSpaceDistancePointRoadLane(double x, double y, roadmanager::CoordinateSystem cs, roadmanager::PositionDiff& pos_diff);
-        int FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, double* longDist,roadmanager::CoordinateSystem cs);
+        int FreeSpaceDistanceObjectRoadLane(Object* target, roadmanager::CoordinateSystem cs, roadmanager::PositionDiff& pos_diff);
 
         /**
         Measure the distance to provided target object

@@ -9117,58 +9117,15 @@ void Position::SetTrajectory(RMTrajectory* trajectory)
     s_trajectory_ = 0;
 }
 
-bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const{
-    if (bothDirections)
-    {
-        return Delta(pos_b, diff, maxDist, maxDist);
-    }
-    else
-    {
-        return Delta(pos_b, diff, maxDist, 0.0);
-    }
-}
 
-bool Position::Delta(Position* pos_b, PositionDiff& diff, double maxDistForward, double maxDistBackward) const
+bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
 {
+
     double dist = 0;
     bool   found;
-    // int direction_;
-    int maxDist ;
-
-    // if (maxDistForward > SMALL_NUMBER)
-    // {
-    //     direction_     = Position::CheckDirection::FORWARD;
-    // }
-    // else if (maxDistBackward > SMALL_NUMBER)
-    // {
-    //     direction_     = Position::CheckDirection::BACKWARD;
-    // }
-    // else
-    // {
-    //     direction_     = Position::CheckDirection::BOTH;
-    // }
-    maxDist = maxDistForward > maxDistBackward ? maxDistForward:maxDistBackward;
 
     RoadPath* path = new RoadPath(this, pos_b);
     found          = (path->Calculate(dist, maxDist) == 0 && abs(dist) < maxDist);
-
-    // if (found)
-    // {
-    //     if (direction_ == Position::CheckDirection::FORWARD && dist < maxDistForward)
-    //     {
-    //         found = true;
-    //     }
-    //     else if (direction_ == Position::CheckDirection::BACKWARD && abs(dist) < maxDistBackward)
-    //     {
-    //         found = true;
-    //     }
-    //     else if ((direction_ == Position::CheckDirection::BOTH && abs(dist) < maxDistForward) && dist < maxDistForward)
-    //     {
-    //         found = true;
-    //     }
-
-    // }
-
 
     if (found)
     {

@@ -1506,15 +1506,15 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
             continue;
         }
         double eculidianDistance = sqrt(pow(pivot_obj->pos_.GetX()- object_->pos_.GetX(),2) + pow(pivot_obj->pos_.GetY()- object_->pos_.GetY(),2));
-        LOG("distance:%.2f",eculidianDistance);
-        if (eculidianDistance <= distanceForward_ || eculidianDistance <= distanceBackward)
+        LOG("eculidianDistance:%.2f",eculidianDistance);
+        if (eculidianDistance <= maxDist)
         {
             roadmanager::PositionDiff diff;
-            // if (object_->pos_.Delta(&pivot_obj->pos_, diff, distanceForward_, distanceBackward) == true)
-            if (object_->Distance(pivot_obj->pos_.GetX(), pivot_obj->pos_.GetY(), CoordinateSystem::CS_ROAD,RelativeDistanceType::REL_DIST_EUCLIDIAN, freeSpace_, diff, maxDist) == 0)
+            if (object_->Distance(pivot_obj, CoordinateSystem::CS_ROAD,RelativeDistanceType::REL_DIST_LONGITUDINAL, freeSpace_, diff, maxDist) == 0)
             {
                 result = true;
             }
+            LOG("currentDistance:%.2f",diff.ds);
         }
         if (EvalDone(result, triggering_entity_rule_))
         {

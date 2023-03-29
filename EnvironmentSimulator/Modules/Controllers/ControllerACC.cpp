@@ -120,7 +120,9 @@ void ControllerACC::Step(double timeStep)
         if (static_cast<unsigned int>(minObjIndex) != i)
         {
             double x_local, y_local;
-            object_->FreeSpaceDistance(pivot_obj, &y_local, &x_local);
+            object_->FreeSpaceDistance(pivot_obj, diff);
+            x_local = diff.ds;
+            y_local = diff.dt;
 
             if (x_local > 0 &&
                 x_local <

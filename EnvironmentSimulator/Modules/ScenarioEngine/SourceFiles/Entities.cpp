@@ -270,7 +270,7 @@ void Object::SetJunctionSelectorAngleRandom()
     nextJunctionSelectorAngle_ = 2 * M_PI * SE_Env::Inst().GetRand().GetReal();
 }
 
-bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, double* distLong)
+bool Object::CollisionAndRelativeDistLatLong(Object* target, PositionDiff* pos_diff)
 {
     // Apply method Separating Axis Theorem (SAT)
     // http://www.euclideanspace.com/threed/games/examples/cars/collisions/
@@ -294,10 +294,12 @@ bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, do
     Object* obj0 = this;
     Object* obj1 = target;
     bool    gap  = false;
-    if (distLong)
-        *distLong = 0.0;
-    if (distLat)
-        *distLat = 0.0;
+    if (pos_diff)
+    {
+        pos_diff->ds = 0.0;
+        pos_diff->dt = 0.0;
+    }
+
 
     // First do a rough check to rule out potential overlap/collision
     // Compare radial/euclidean distance with sum of the diagonal dimension of the bounding boxes
@@ -307,13 +309,13 @@ bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, do
     double max_width      = this->boundingbox_.dimensions_.width_ + target->boundingbox_.dimensions_.width_;
     double dist_threshold = sqrt(max_length * max_length + max_width * max_width);
 
-    if (dist > dist_threshold && distLong == nullptr && distLat == nullptr)
+    if (dist > dist_threshold && pos_diff== nullptr)
     {
         return false;
     }
 
     // Also do a Z sanity check, to rule out on different road elevations
-    if (fabs(obj0->pos_.GetZ() - obj1->pos_.GetZ()) > ELEVATION_DIFF_THRESHOLD && distLong == nullptr && distLat == nullptr)
+    if (fabs(obj0->pos_.GetZ() - obj1->pos_.GetZ()) > ELEVATION_DIFF_THRESHOLD && pos_diff== nullptr)
     {
         return false;
     }
@@ -391,7 +393,7 @@ bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, do
             {
                 // gap found
                 gap = true;
-                if (distLong == nullptr && distLat == nullptr)
+                if (pos_diff == nullptr)
                 {
                     return !gap;
                 }
@@ -404,26 +406,26 @@ bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, do
                         {
                             if (j == 0)
                             {
-                                if (distLat)
-                                    *distLat = min[1] - max[0];
+                                if (pos_diff)
+                                    pos_diff->dt = min[1] - max[0];
                             }
                             else
                             {
-                                if (distLong)
-                                    *distLong = min[1] - max[0];
+                                if (pos_diff)
+                                    pos_diff->ds = min[1] - max[0];
                             }
                         }
                         else
                         {
                             if (j == 0)
                             {
-                                if (distLat)
-                                    *distLat = -(min[0] - max[1]);
+                                if (pos_diff)
+                                    pos_diff->dt = -(min[0] - max[1]);
                             }
                             else
                             {
-                                if (distLong)
-                                    *distLong = -(min[0] - max[1]);
+                                if (pos_diff)
+                                    pos_diff->ds = -(min[0] - max[1]);
                             }
                         }
                     }
@@ -521,18 +523,18 @@ double Object::PointCollision(double x, double y)
     return true;
 }
 
-double Object::FreeSpaceDistance(Object* target, double* latDist, double* longDist)
+double Object::FreeSpaceDistance(Object* target, PositionDiff& pos_diff)
 {
     double minDist = LARGE_NUMBER;
-    *latDist       = LARGE_NUMBER;
-    *longDist      = LARGE_NUMBER;
+    pos_diff.dt       = LARGE_NUMBER;
+    pos_diff.ds      = LARGE_NUMBER;
 
     if (target == 0)
     {
         return minDist;
     }
 
-    if (CollisionAndRelativeDistLatLong(target, latDist, longDist))
+    if (CollisionAndRelativeDistLatLong(target, &pos_diff))
     {
         return 0.0;
     }
@@ -774,10 +776,10 @@ int Object::FreeSpaceDistancePointRoadLane(double x, double y, CoordinateSystem 
     return 0;
 }
 
-int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, double* longDist, CoordinateSystem cs)
+int Object::FreeSpaceDistanceObjectRoadLane(Object* target, CoordinateSystem cs, PositionDiff& pos_diff)
 {
-    *latDist  = LARGE_NUMBER;
-    *longDist = LARGE_NUMBER;
+    pos_diff.dt  = LARGE_NUMBER;
+    pos_diff.ds = LARGE_NUMBER;
 
     // First some checks
     if (target == 0)
@@ -799,8 +801,8 @@ int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, dou
 
     if (Collision(target))
     {
-        *longDist = 0.0;
-        *latDist  = 0.0;
+        pos_diff.ds = 0.0;
+        pos_diff.dt  = 0.0;
         return 0;
     }
 
@@ -849,7 +851,6 @@ int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, dou
     double       minDS = LARGE_NUMBER;
     double       maxDT = 0.0;
     double       minDT = LARGE_NUMBER;
-    PositionDiff posDiff;
 
     double ds[4][4];  // delta s between every vertex on first bb to every vertex on second bb
     double dt[4][4];  // delta t between every vertex on first bb to every vertex on second bb
@@ -858,37 +859,37 @@ int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, dou
     {
         for (int j = 0; j < 4; j++)  // for each vertex of second BBs
         {
-            if (pos[0][i].Delta(&pos[1][j], posDiff) == false)
+            if (pos[0][i].Delta(&pos[1][j], pos_diff) == false)
             {
                 return -1;
             }
-            ds[i][j] = posDiff.ds;
-            dt[i][j] = posDiff.dt;
+            ds[i][j] = pos_diff.ds;
+            dt[i][j] = pos_diff.dt;
 
-            if ((i == 0 && j == 0) || fabs(posDiff.ds) < fabs(minDS))
+            if ((i == 0 && j == 0) || fabs(pos_diff.ds) < fabs(minDS))
             {
-                minDS = posDiff.ds;
+                minDS = pos_diff.ds;
             }
 
-            if ((i == 0 && j == 0) || fabs(posDiff.dt) < fabs(minDT))
+            if ((i == 0 && j == 0) || fabs(pos_diff.dt) < fabs(minDT))
             {
-                minDT = posDiff.dt;
+                minDT = pos_diff.dt;
             }
 
-            if ((i == 0 && j == 0) || fabs(posDiff.ds) > fabs(maxDS))
+            if ((i == 0 && j == 0) || fabs(pos_diff.ds) > fabs(maxDS))
             {
-                maxDS = posDiff.ds;
+                maxDS = pos_diff.ds;
             }
 
-            if ((i == 0 && j == 0) || fabs(posDiff.dt) > fabs(maxDT))
+            if ((i == 0 && j == 0) || fabs(pos_diff.dt) > fabs(maxDT))
             {
-                maxDT = posDiff.dt;
+                maxDT = pos_diff.dt;
             }
         }
     }
 
-    *longDist = minDS;
-    *latDist  = minDT;
+    pos_diff.ds = minDS;
+    pos_diff.dt  = minDT;
 
     // Check for overlap
     for (int i = 0; i < 4; i++)  // for each ds
@@ -896,12 +897,12 @@ int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, dou
         if (!((SIGN(ds[i][0]) == SIGN(ds[i][1])) && (SIGN(ds[i][0]) == SIGN(ds[i][2])) && (SIGN(ds[i][0]) == SIGN(ds[i][3]))))
         {
             // Overlap
-            *longDist = 0.0;
+            pos_diff.ds = 0.0;
         }
         if (!((SIGN(dt[i][0]) == SIGN(dt[i][1])) && (SIGN(dt[i][0]) == SIGN(dt[i][2])) && (SIGN(dt[i][0]) == SIGN(dt[i][3]))))
         {
             // Overlap
-            *latDist = 0.0;
+            pos_diff.dt = 0.0;
         }
     }
 
@@ -923,7 +924,8 @@ int Object::Distance(Object*                           target,
             relDistType == RelativeDistanceType::REL_DIST_CARTESIAN)
         {
             // Get Cartesian/Euclidian distance
-            pos_diff.dist = FreeSpaceDistance(target, &pos_diff.dt, &pos_diff.ds);
+            // pos_diff.dist = FreeSpaceDistance(target, &pos_diff.dt, &pos_diff.ds);
+            pos_diff.dist = FreeSpaceDistance(target, pos_diff);
 
             // sign indicates target being in front (+) or behind (-)
             pos_diff.dist *= SIGN(pos_diff.ds);
@@ -932,17 +934,17 @@ int Object::Distance(Object*                           target,
             {
                 if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    pos_diff.dt = pos_diff.dt;
+                    pos_diff.dist = pos_diff.dt;
                 }
                 else if (relDistType == roadmanager::RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    pos_diff.ds = pos_diff.ds;
+                    pos_diff.dist = pos_diff.ds;
                 }
             }
         }
         else if (cs == CoordinateSystem::CS_ROAD || cs == CoordinateSystem::CS_LANE)
         {
-            if (FreeSpaceDistanceObjectRoadLane(target, &pos_diff.dt, &pos_diff.ds, cs) != 0)
+            if (FreeSpaceDistanceObjectRoadLane(target, cs, pos_diff) != 0)
             {
                 return -1;
             }
@@ -950,11 +952,11 @@ int Object::Distance(Object*                           target,
             {
                 if (relDistType == RelativeDistanceType::REL_DIST_LATERAL)
                 {
-                    pos_diff.dt = pos_diff.dt;
+                    pos_diff.dist = pos_diff.dt;
                 }
                 else if (relDistType == RelativeDistanceType::REL_DIST_LONGITUDINAL)
                 {
-                    pos_diff.ds = pos_diff.ds;
+                    pos_diff.dist = pos_diff.ds;
                 }
                 else
                 {
@@ -992,7 +994,7 @@ int Object::Distance(double                            x,
             relDistType == RelativeDistanceType::REL_DIST_CARTESIAN)
         {
             // Get Cartesian/Euclidian distance
-            pos_diff.dist = FreeSpaceDistancePoint(x, y, &pos_diff.ds, &pos_diff.dt);
+            pos_diff.dist = FreeSpaceDistancePoint(x, y, &pos_diff.dt, &pos_diff.ds);
 
             // sign indicates target being in front (+) or behind (-)
             pos_diff.dist *= SIGN(pos_diff.ds);
