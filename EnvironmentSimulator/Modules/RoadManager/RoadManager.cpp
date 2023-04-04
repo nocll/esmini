@@ -9082,13 +9082,65 @@ void Position::SetTrajectory(RMTrajectory* trajectory)
     s_trajectory_ = 0;
 }
 
+bool Position::relativeLaneId(Position* pos_b,  int &dLaneId) const
+{
+
+    RoadPath* path = new RoadPath(this, pos_b);
+
+    int    laneIdB = pos_b->GetLaneId();
+
+    if (path->visited_.size() > 0)
+    {
+        RoadPath::PathNode* lastNode  = path->visited_.back();
+        RoadPath::PathNode* firstNode = path->firstNode_;
+        if (firstNode == nullptr)
+        {
+            LOG("Missing first node in path");
+            return false;
+        }
+        if (lastNode == nullptr)
+        {
+            LOG("Missing last node in path");
+            return false;
+        }
+        bool isPathForward         = firstNode->link->GetType() == LinkType::SUCCESSOR;
+        bool isPathBackward        = firstNode->link->GetType() == LinkType::PREDECESSOR;
+        bool isConnectedToEnd      = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_END;
+        bool isConnectedToStart    = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_START;
+        bool isConnectedToJunction = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_JUNCTION;
+        if (isConnectedToJunction)
+        {
+            Road*     lastNodeRoad = lastNode->fromRoad;
+            Road*     lastRoad     = GetRoadById(pos_b->GetTrackId());
+            RoadLink* linkPred     = lastRoad->GetLink(LinkType::PREDECESSOR);
+            RoadLink* linkSucc     = lastRoad->GetLink(LinkType::SUCCESSOR);
+            isConnectedToStart     = linkPred && lastNodeRoad && lastNodeRoad->GetId() == linkPred->GetElementId();
+            isConnectedToEnd       = linkSucc && lastNodeRoad && lastNodeRoad->GetId() == linkSucc->GetElementId();
+        }
+
+        bool isHeadToHead = isPathForward && isConnectedToEnd;
+        bool isToeToToe   = isPathBackward && isConnectedToStart;
+
+        // If start and end roads are oppoite directed, inverse one side for delta calculations
+        if (isHeadToHead || isToeToToe)
+        {
+            laneIdB = -laneIdB;
+        }
+    }
+
+    dLaneId = -SIGN(GetLaneId()) * (laneIdB - GetLaneId());
+    delete path;
+
+    return true;
+}
+
 bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
 {
     double dist = 0;
     bool   found;
 
     RoadPath* path = new RoadPath(this, pos_b);
-    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && dist < maxDist);
+    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && abs(dist) < maxDist);
     if (found)
     {
         int    laneIdB = pos_b->GetLaneId();

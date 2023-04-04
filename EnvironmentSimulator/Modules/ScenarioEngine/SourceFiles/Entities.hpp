@@ -267,7 +267,7 @@ namespace scenarioengine
                 @param longDist Returns longitudinal distance to target object
                 @return distance The free-space Euclidean distance between objects (0 if collision)
         */
-        double FreeSpaceDistance(Object* target, double* latDist, double* longDist);
+        double FreeSpaceDistance(Object* target, double* latDist = 0, double* longDist = 0);
 
         /**
                 Measure the free-space distance to provided target 2D position
@@ -316,6 +316,11 @@ namespace scenarioengine
                      bool                              freeSpace,
                      double&                           dist,
                      double                            maxDist = LARGE_NUMBER);
+
+        int Distance(Object*                            target,
+                     bool                               freeSpace,
+                     roadmanager::PositionDiff&         pos_diff,
+                     double                             maxDist = LARGE_NUMBER);
 
         enum class OverlapType
         {

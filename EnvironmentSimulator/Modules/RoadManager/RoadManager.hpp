@@ -2675,6 +2675,13 @@ namespace roadmanager
         double dy;       // delta y (world coordinate system)
     } PositionDiff;
 
+    typedef struct
+    {
+        double dist;       // delta s (longitudinal distance)
+        int    dLaneId;  // delta laneId (increasing left and decreasing to the right)
+    } RelativePositionDiff;
+
+
     enum class CoordinateSystem
     {
         CS_UNDEFINED,
@@ -2971,6 +2978,8 @@ namespace roadmanager
         @return distance (meter). Negative if the specified position is behind the current one.
         */
         double getRelativeDistance(double targetX, double targetY, double &x, double &y) const;
+
+        bool relativeLaneId(Position *pos_b, int &laneId) const;
 
         /**
         Find out the difference between two position objects, in effect subtracting the values

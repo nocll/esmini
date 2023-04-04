@@ -294,10 +294,15 @@ bool Object::CollisionAndRelativeDistLatLong(Object* target, double* distLat, do
     Object* obj0 = this;
     Object* obj1 = target;
     bool    gap  = false;
-    if (distLong)
+    if (distLong != nullptr)
+    {
         *distLong = 0.0;
-    if (distLat)
+    }
+    if (distLat!= nullptr)
+    {
         *distLat = 0.0;
+    }
+
 
     // First do a rough check to rule out potential overlap/collision
     // Compare radial/euclidean distance with sum of the diagonal dimension of the bounding boxes
@@ -524,8 +529,15 @@ double Object::PointCollision(double x, double y)
 double Object::FreeSpaceDistance(Object* target, double* latDist, double* longDist)
 {
     double minDist = LARGE_NUMBER;
-    *latDist       = LARGE_NUMBER;
-    *longDist      = LARGE_NUMBER;
+
+    if (longDist != nullptr)
+    {
+        *longDist = LARGE_NUMBER;
+    }
+    if (latDist != nullptr)
+    {
+        *latDist = LARGE_NUMBER;
+    }
 
     if (target == 0)
     {
@@ -906,6 +918,31 @@ int Object::FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, dou
     }
 
     return 0;
+}
+
+int Object::Distance(Object*                            target,
+                     bool                               freeSpace,
+                     roadmanager::PositionDiff&         pos_diff,
+                     double                             maxDist)
+{
+    double distTemp;
+
+    if(freeSpace)
+    {
+        distTemp = FreeSpaceDistance(target);
+    }
+    else
+    {
+        PositionDiff diff;
+        bool         routeFound = pos_.Delta(&target->pos_, diff, true, maxDist);
+        if (routeFound == false)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+
 }
 
 int Object::Distance(Object*                           target,

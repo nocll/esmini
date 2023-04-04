@@ -1485,3 +1485,83 @@ void TrigByRelativeSpeed::Log()
         value_,
         Edge2Str().c_str());
 }
+
+bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_time)
+{
+    (void)storyBoard;
+    (void)sim_time;
+
+
+    bool result = false;
+    double maxDist = distanceForward_ > distanceBackward ? distanceForward_:distanceBackward;
+
+    for (size_t i = 0; i < triggering_entities_.entity_.size(); i++)
+    {
+        Object* entityObject = triggering_entities_.entity_[i].object_;
+
+        Object* refObject_;
+
+        for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
+        {
+            refObject_ = storyBoard->entities_->object_[j];
+            if (refObject_ == entityObject)
+            { // ignore the entity which in triggering itself
+                continue;
+            }
+            if (objects_.size() != 0)
+            {// check for entity in the list
+                if ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))
+                {// ignore the entity which in not in reference entity list
+                    continue;
+                }
+            }
+            if (!(abs(to_) >= abs(from_)))
+            { // quit execution if to value is less than from value
+                LOG("QUITTING, Wrong form and to value in RelativeLaneRange attribute");
+                // return 0;
+            }
+
+            double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
+            if (!(maxDist + (maxDist * 0.25) <= equDistance))
+            {
+                continue;
+            }
+            if ((SIGN(entityObject->pos_.GetLaneId()) == SIGN(refObject_->pos_.GetLaneId())) && (oppositeLanes_))
+            {
+                continue;
+            }
+
+            PositionDiff diff;
+            bool routeFound;
+            if(freeSpace_)
+            {
+                routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+            }
+            else
+            {
+                routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+            }
+
+            if (!routeFound || (!(diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
+            { // ignore entity which in not in required lane and within distance
+                continue;
+            }
+            else
+            {
+                result = true;
+
+            }
+        }
+
+        if (result == true)
+        {
+            triggered_by_entities_.push_back(triggering_entities_.entity_[i].object_);
+        }
+
+        if (EvalDone(result, triggering_entity_rule_))
+        {
+            break;
+        }
+    }
+    return result;
+}
