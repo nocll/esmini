@@ -1504,34 +1504,21 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
         for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
         {
             refObject_ = storyBoard->entities_->object_[j];
-            if (refObject_ == entityObject)
-            { // ignore the entity which in triggering itself
+            double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
+            if ((refObject_ == entityObject) ||
+                ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))) ||
+                ((maxDist - (maxDist * 0.25) >= equDistance)) ||
+                ((SIGN(entityObject->pos_.GetLaneId()) == SIGN(refObject_->pos_.GetLaneId())) && (oppositeLanes_)))
+            { // ignore the entity which in triggering itself, entity which in not in reference entity list, Within not interested distance(75% of maxdist), opposite lane entity.
                 continue;
             }
-            if (objects_.size() != 0)
-            {// check for entity in the list
-                if ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))
-                {// ignore the entity which in not in reference entity list
-                    continue;
-                }
-            }
+
             if (((from_ > 0 && to_ > 0) && (from_ > to_)) ||
                 ((from_ < 0 && to_ < 0) && (from_ < to_)) ||
                 (from_ > 0 && to_ < 0))
             { // quit execution if to value is less than from value
                 LOG("QUITTING, Wrong form and to value in RelativeLaneRange attribute");
                 return 0;
-            }
-
-
-            double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
-            if ((maxDist - (maxDist * 0.25) >= equDistance))
-            {
-                continue;
-            }
-            if ((SIGN(entityObject->pos_.GetLaneId()) == SIGN(refObject_->pos_.GetLaneId())) && (oppositeLanes_))
-            {
-                continue;
             }
 
             PositionDiff diff;
