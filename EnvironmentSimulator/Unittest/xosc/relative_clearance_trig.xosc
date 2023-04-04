@@ -33,6 +33,12 @@
       <ScenarioObject name="Dummy">
          <CatalogReference catalogName="VehicleCatalog" entryName="car_yellow"/>
       </ScenarioObject>
+      <ScenarioObject name="Dummy1">
+         <CatalogReference catalogName="VehicleCatalog" entryName="car_police"/>
+      </ScenarioObject>
+      <ScenarioObject name="Dummy2">
+         <CatalogReference catalogName="VehicleCatalog" entryName="bus_blue"/>
+      </ScenarioObject>
    </Entities>
    <Storyboard>
       <Init>
@@ -100,7 +106,7 @@
                      <SpeedAction>
                         <SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="0.0"/>
                         <SpeedActionTarget>
-                           <AbsoluteTargetSpeed value="0.2"/>
+                           <AbsoluteTargetSpeed value="3"/>
                         </SpeedActionTarget>
                      </SpeedAction>
                   </LongitudinalAction>
@@ -108,7 +114,45 @@
                <PrivateAction>
                     <TeleportAction>
                         <Position>
-                            <WorldPosition x="40" y="-15.0"/>
+                            <LanePosition roadId="1" laneId="1" offset="0" s="150"/>
+                        </Position>
+                    </TeleportAction>
+               </PrivateAction>
+            </Private>
+            <Private entityRef="Dummy1">
+               <PrivateAction>
+                  <LongitudinalAction>
+                     <SpeedAction>
+                        <SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="0.0"/>
+                        <SpeedActionTarget>
+                           <AbsoluteTargetSpeed value="10"/>
+                        </SpeedActionTarget>
+                     </SpeedAction>
+                  </LongitudinalAction>
+               </PrivateAction>
+               <PrivateAction>
+                    <TeleportAction>
+                        <Position>
+                            <LanePosition roadId="1" laneId="-1" offset="0" s="35"/>
+                        </Position>
+                    </TeleportAction>
+               </PrivateAction>
+            </Private>
+            <Private entityRef="Dummy2">
+               <PrivateAction>
+                  <LongitudinalAction>
+                     <SpeedAction>
+                        <SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="time" value="0.0"/>
+                        <SpeedActionTarget>
+                           <AbsoluteTargetSpeed value="10"/>
+                        </SpeedActionTarget>
+                     </SpeedAction>
+                  </LongitudinalAction>
+               </PrivateAction>
+               <PrivateAction>
+                    <TeleportAction>
+                        <Position>
+                            <LanePosition roadId="1" laneId="-3" offset="0" s="5"/>
                         </Position>
                     </TeleportAction>
                </PrivateAction>
@@ -144,8 +188,8 @@
                                  </TriggeringEntities>
                                  <EntityCondition>
                                     <RelativeClearanceCondition distanceForward="20" freeSpace="false" oppositeLanes = "false">
-                                       <EntityRef entityRef="Target"/>
-                                       <RelativeLaneRange from= "-1" to = "2"/>
+                                       <EntityRef entityRef="Dummy2"/>
+                                       <RelativeLaneRange from= "-3" to = "-3"/>
                                     </RelativeClearanceCondition>
                                  </EntityCondition>
                               </ByEntityCondition>

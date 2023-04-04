@@ -1515,14 +1515,17 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                     continue;
                 }
             }
-            if (!(abs(to_) >= abs(from_)))
+            if (((from_ > 0 && to_ > 0) && (from_ > to_)) ||
+                ((from_ < 0 && to_ < 0) && (from_ < to_)) ||
+                (from_ > 0 && to_ < 0))
             { // quit execution if to value is less than from value
                 LOG("QUITTING, Wrong form and to value in RelativeLaneRange attribute");
-                // return 0;
+                return 0;
             }
 
+
             double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
-            if (!(maxDist + (maxDist * 0.25) <= equDistance))
+            if ((maxDist - (maxDist * 0.25) >= equDistance))
             {
                 continue;
             }
@@ -1535,14 +1538,14 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
             bool routeFound;
             if(freeSpace_)
             {
-                routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+                routeFound = entityObject->FreeSpaceDistanceObjectRoadLane(refObject_, &diff, CoordinateSystem::CS_ROAD);
             }
             else
             {
                 routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
             }
 
-            if (!routeFound || (!(diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
+            if (routeFound || (!(diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
             { // ignore entity which in not in required lane and within distance
                 continue;
             }

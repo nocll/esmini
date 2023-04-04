@@ -281,7 +281,7 @@ namespace scenarioengine
         double FreeSpaceDistancePoint(double x, double y, double* latDist, double* longDist);
 
         int FreeSpaceDistancePointRoadLane(double x, double y, double* latDist, double* longDist, roadmanager::CoordinateSystem cs);
-        int FreeSpaceDistanceObjectRoadLane(Object* target, double* latDist, double* longDist, roadmanager::CoordinateSystem cs);
+        int FreeSpaceDistanceObjectRoadLane(Object* target, roadmanager::PositionDiff* diff, roadmanager::CoordinateSystem cs);
 
         /**
         Measure the distance to provided target object
@@ -317,10 +317,6 @@ namespace scenarioengine
                      double&                           dist,
                      double                            maxDist = LARGE_NUMBER);
 
-        int Distance(Object*                            target,
-                     bool                               freeSpace,
-                     roadmanager::PositionDiff&         pos_diff,
-                     double                             maxDist = LARGE_NUMBER);
 
         enum class OverlapType
         {
