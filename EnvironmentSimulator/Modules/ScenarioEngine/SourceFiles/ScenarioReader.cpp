@@ -3765,11 +3765,23 @@ OSCCondition *ScenarioReader::parseOSCCondition(pugi::xml_node conditionNode)
                         if (!parameters.ReadAttribute(condition_node, "distanceForward").empty())
                         {// populate only if available else use default
                             trigger->distanceForward_ = strtod(parameters.ReadAttribute(condition_node, "distanceForward"));
+                            if (trigger->distanceForward_ < 0)
+                            {
+                                trigger->distanceForward_ = abs(trigger->distanceForward_);
+                                LOG("Negative value not allowed as distanceForward in RelativeClearanceCondition. Converted as positive value");
+                            }
                         }
+
                         if (!parameters.ReadAttribute(condition_node, "distanceBackward").empty())
                         {// populate only if available else use default
                             trigger->distanceBackward_ = strtod(parameters.ReadAttribute(condition_node, "distanceBackward"));
+                            if (trigger->distanceBackward_ < 0)
+                            {
+                                trigger->distanceBackward_ = abs(trigger->distanceBackward_);
+                                LOG("Negative value not allowed as distanceBackward in RelativeClearanceCondition. Converted as positive value");
+                            }
                         }
+
                         if (!parameters.ReadAttribute(condition_node, "freeSpace").empty())
                         {
                             strTemp = parameters.ReadAttribute(condition_node, "freeSpace");
@@ -3779,6 +3791,7 @@ OSCCondition *ScenarioReader::parseOSCCondition(pugi::xml_node conditionNode)
                         {// Provide warring and use default value
                             LOG("FreeSpace is mandatory attribute in RelativeClearanceCondition. Anyway setting it false");
                         }
+
                         if (!parameters.ReadAttribute(condition_node, "oppositeLanes").empty())
                         {
                             strTemp = parameters.ReadAttribute(condition_node, "oppositeLanes");
@@ -3804,6 +3817,7 @@ OSCCondition *ScenarioReader::parseOSCCondition(pugi::xml_node conditionNode)
                                 {// populate only if available else use default
                                     trigger->to_ = strtoi(parameters.ReadAttribute(byValueChild, "to"));
                                 }
+
                                 if (!parameters.ReadAttribute(byValueChild, "from").empty())
                                 {// populate only if available else use default
                                     trigger->from_ = strtoi(parameters.ReadAttribute(byValueChild, "from"));
