@@ -1500,6 +1500,7 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
         Object* entityObject = triggering_entities_.entity_[i].object_;
 
         Object* refObject_;
+        int visitedObject_count = 0;
 
         for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
         {
@@ -1508,7 +1509,7 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
             if ((refObject_ == entityObject) ||
                 ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))) ||
                 ((maxDist - (maxDist * 0.25) >= equDistance)) ||
-                ((SIGN(entityObject->pos_.GetLaneId()) == SIGN(refObject_->pos_.GetLaneId())) && (oppositeLanes_)))
+                ((SIGN(entityObject->pos_.GetLaneId()) != SIGN(refObject_->pos_.GetLaneId())) && (!oppositeLanes_)))
             { // ignore the entity which in triggering itself, entity which in not in reference entity list, Within not interested distance(75% of maxdist), opposite lane entity.
                 continue;
             }
@@ -1532,14 +1533,23 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
             }
 
-            if (routeFound || (!(diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
-            { // ignore entity which in not in required lane and within distance
-                continue;
+            if (!routeFound && ((diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
+            { // Accept entity which is only when outside clearance distance in required lanes
+                visitedObject_count += 1;
             }
-            else
+        }
+        if (objects_.size() == 0)
+        {
+            if (static_cast<int>(storyBoard->entities_->object_.size()) == visitedObject_count)
             {
                 result = true;
-
+            }
+        }
+        else
+        {
+            if (static_cast<int>(objects_.size()) == visitedObject_count)
+            {
+                result = true;
             }
         }
 

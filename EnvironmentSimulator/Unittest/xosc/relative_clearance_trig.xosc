@@ -187,9 +187,11 @@
                                     <EntityRef entityRef="TargetRef"/>
                                  </TriggeringEntities>
                                  <EntityCondition>
-                                    <RelativeClearanceCondition distanceForward="20" freeSpace="false" oppositeLanes = "false">
-                                       <EntityRef entityRef="Dummy2"/>
-                                       <RelativeLaneRange from= "-3" to = "-3"/>
+                                    <RelativeClearanceCondition distanceForward="40" freeSpace="false" oppositeLanes = "true">
+                                       <EntityRef entityRef="Dummy1"/>
+                                       <EntityRef entityRef="Target"/>
+                                       <EntityRef entityRef="Dummy"/>
+                                       <RelativeLaneRange from= "-3" to = "1"/>
                                     </RelativeClearanceCondition>
                                  </EntityCondition>
                               </ByEntityCondition>
@@ -201,6 +203,7 @@
             </ManeuverGroup>
             <ManeuverGroup maximumExecutionCount="1" name="TargetSequence">
                <Actors selectTriggeringEntities="false">
+                  <EntityRef entityRef="Dummy1"/>
                   <EntityRef entityRef="Target"/>
                </Actors>
                <Maneuver name="TargetManeuver">
