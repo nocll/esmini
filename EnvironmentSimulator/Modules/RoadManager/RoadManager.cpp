@@ -9140,7 +9140,7 @@ bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, d
     bool   found;
 
     RoadPath* path = new RoadPath(this, pos_b);
-    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && abs(dist) < maxDist);
+    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && dist < maxDist);
     if (found)
     {
         int    laneIdB = pos_b->GetLaneId();

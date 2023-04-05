@@ -187,11 +187,11 @@
                                     <EntityRef entityRef="TargetRef"/>
                                  </TriggeringEntities>
                                  <EntityCondition>
-                                    <RelativeClearanceCondition distanceForward="40" freeSpace="false" oppositeLanes = "true">
+                                    <RelativeClearanceCondition distanceForward="40" distanceBackward="30" freeSpace="false" oppositeLanes = "true">
                                        <EntityRef entityRef="Dummy1"/>
                                        <EntityRef entityRef="Target"/>
                                        <EntityRef entityRef="Dummy"/>
-                                       <RelativeLaneRange from= "-3" to = "1"/>
+                                       <RelativeLaneRange from= "-3" to = "3"/>
                                     </RelativeClearanceCondition>
                                  </EntityCondition>
                               </ByEntityCondition>

@@ -1493,22 +1493,23 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
 
 
     bool result = false;
-    double maxDist = distanceForward_ > distanceBackward ? distanceForward_:distanceBackward;
+    double maxDist = distanceForward_ > distanceBackward_ ? distanceForward_:distanceBackward_;
 
     for (size_t i = 0; i < triggering_entities_.entity_.size(); i++)
     {
         Object* entityObject = triggering_entities_.entity_[i].object_;
 
         Object* refObject_;
-        int visitedObject_count = 0;
+        int visitedObj_count = 0;
+        int objToVisit_count = 0;
 
         for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
         {
             refObject_ = storyBoard->entities_->object_[j];
-            double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
+            // double equDistance = sqrt(pow(refObject_->pos_.GetX()- entityObject->pos_.GetX(),2) + pow(refObject_->pos_.GetY()- entityObject->pos_.GetY(),2));
             if ((refObject_ == entityObject) ||
                 ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))) ||
-                ((maxDist - (maxDist * 0.25) >= equDistance)) ||
+                // ((maxDist - (maxDist * 0.25) >= equDistance)) ||
                 ((SIGN(entityObject->pos_.GetLaneId()) != SIGN(refObject_->pos_.GetLaneId())) && (!oppositeLanes_)))
             { // ignore the entity which in triggering itself, entity which in not in reference entity list, Within not interested distance(75% of maxdist), opposite lane entity.
                 continue;
@@ -1523,34 +1524,53 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
             }
 
             PositionDiff diff;
-            bool routeFound;
+            bool objFound;
             if(freeSpace_)
             {
-                routeFound = entityObject->FreeSpaceDistanceObjectRoadLane(refObject_, &diff, CoordinateSystem::CS_ROAD);
+                objFound = entityObject->FreeSpaceDistanceObjectRoadLane(refObject_, &diff, CoordinateSystem::CS_ROAD);
             }
             else
             {
-                routeFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+                objFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist + 5);
+            }
+            if (objFound)
+            {
+                if (distanceBackward_ > 0)
+                {
+                    if ((diff.ds < -distanceBackward_) || (diff.ds >= 0))
+                    {
+                        objFound = false;
+                    }
+                }
+                else if (distanceForward_ > 0)
+                {
+                    if ((diff.ds > distanceForward_) || (diff.ds <= 0))
+                    {
+                        objFound = false;
+                    }
+                }
+                else
+                {
+                    if ((diff.ds > distanceForward_) && (diff.ds < -distanceBackward_))
+                    {
+                        objFound = false;
+                    }
+                }
             }
 
-            if (!routeFound && ((diff.dLaneId >= from_) && (diff.dLaneId <= to_)))
-            { // Accept entity which is only when outside clearance distance in required lanes
-                visitedObject_count += 1;
-            }
-        }
-        if (objects_.size() == 0)
-        {
-            if (static_cast<int>(storyBoard->entities_->object_.size()) == visitedObject_count)
+            if ((diff.dLaneId >= from_) && (diff.dLaneId <= to_))
             {
-                result = true;
+                objToVisit_count += 1; // store the entity as count those needs to fullfil the clearance.
+                if (!objFound)
+                { // Accept entity which is only when outside clearance distance in required lanes
+                    visitedObj_count += 1;
+                }
             }
+
         }
-        else
-        {
-            if (static_cast<int>(objects_.size()) == visitedObject_count)
-            {
-                result = true;
-            }
+        if (objToVisit_count == visitedObj_count)
+        { // Make sure all the entity visited and fulfilled clearance
+             result = true;
         }
 
         if (result == true)

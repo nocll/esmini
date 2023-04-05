@@ -407,7 +407,7 @@ namespace scenarioengine
         std::vector<Object*>   objects_;
         // Object* object_;
         double               distanceForward_;
-        double               distanceBackward;
+        double               distanceBackward_;
         int                  from_;
         int                  to_;
         bool                 freeSpace_;
@@ -417,7 +417,7 @@ namespace scenarioengine
         TrigByRelativeClearance()
             : TrigByEntity(TrigByEntity::EntityConditionType::RELATIVE_CLEARANCE),
               distanceForward_(0),
-              distanceBackward(0),
+              distanceBackward_(0),
               from_(-LARGE_NUMBER_INT), // -inf
               to_(LARGE_NUMBER_INT),    // +inf
               freeSpace_(false),

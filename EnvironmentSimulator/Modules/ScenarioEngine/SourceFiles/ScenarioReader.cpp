@@ -3768,7 +3768,7 @@ OSCCondition *ScenarioReader::parseOSCCondition(pugi::xml_node conditionNode)
                         }
                         if (!parameters.ReadAttribute(condition_node, "distanceBackward").empty())
                         {// populate only if available else use default
-                            trigger->distanceForward_ = strtod(parameters.ReadAttribute(condition_node, "distanceBackward"));
+                            trigger->distanceBackward_ = strtod(parameters.ReadAttribute(condition_node, "distanceBackward"));
                         }
                         if (!parameters.ReadAttribute(condition_node, "freeSpace").empty())
                         {
