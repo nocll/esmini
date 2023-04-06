@@ -1518,8 +1518,7 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 ((from_ < 0 && to_ < 0) && (from_ < to_)) ||
                 (from_ > 0 && to_ < 0))
             { // quit execution if to value is less than from value
-                LOG("QUITTING, Wrong form and to value in RelativeLaneRange attribute");
-                return 0;
+                LOG_AND_QUIT("QUITTING, Wrong from and to value in RelativeLaneRange element");
             }
 
             PositionDiff diff;
@@ -1547,7 +1546,10 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 objToVisit_count += 1; // store the entity as count those needs to fullfil the clearance.
                 if (!objFound)
                 { // Accept entity which is only when outside clearance distance in required lanes
-                     visitedObj_count += 1;
+                    visitedObj_count += 1;
+                    LOG("Name:%s", refObject_->GetName().c_str());
+                    LOG("Relative distance T:%f", refObject_->pos_.GetS());
+                    LOG("Relative distance S:%f", refObject_->pos_.GetT());
                 }
             }
 

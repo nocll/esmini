@@ -195,7 +195,7 @@
                                     <EntityRef entityRef="TargetRef"/>
                                  </TriggeringEntities>
                                  <EntityCondition>
-                                    <RelativeClearanceCondition distanceForward="40" distanceBackward="30" freeSpace="true" oppositeLanes = "false">
+                                    <RelativeClearanceCondition distanceForward="40" distanceBackward="30" freeSpace="false" oppositeLanes = "false">
                                        <EntityRef entityRef="Dummy1"/>
                                        <EntityRef entityRef="Target"/>
                                        <EntityRef entityRef="Dummy"/>
@@ -231,9 +231,9 @@
                      </Action>
                      <StartTrigger>
                         <ConditionGroup>
-                           <Condition name="SetOverrideActionTrigger3" delay="0" conditionEdge="none">
+                           <Condition name="RelativeClearancStart" delay="0" conditionEdge="none">
                               <ByValueCondition>
-                                 <SimulationTimeCondition value="5" rule="greaterThan"/>
+                                 <SimulationTimeCondition value="5" rule="greaterOrEqual"/>
                               </ByValueCondition>
                            </Condition>
                         </ConditionGroup>
