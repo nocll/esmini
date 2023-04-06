@@ -2703,6 +2703,7 @@ namespace roadmanager
     // Forward declarations
     class Route;
     class RMTrajectory;
+    class RoadPath;
 
     class Position
     {
@@ -2979,7 +2980,16 @@ namespace roadmanager
         */
         double getRelativeDistance(double targetX, double targetY, double &x, double &y) const;
 
-        bool relativeLaneId(Position *pos_b, int &laneId) const;
+        /**
+        Find out the relative lane id between two position objects.
+        @param pos_b The position from which to subtract the current position (this position object)
+        @param path Path between two position objects
+        @param laneId. Return argument, Relative lane id.
+        @param latDist (meter). Return argument, Lateral distance between two position object.
+        @return 0.
+        */
+
+        bool getRelativeLaneId(Position *pos_b, RoadPath *path, int &laneId, double *latDist) const;
 
         /**
         Find out the difference between two position objects, in effect subtracting the values
@@ -2991,6 +3001,7 @@ namespace roadmanager
         @return true if position found and parameter values are valid, else false
         */
         bool Delta(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
+        bool DeltaOld(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
 
         /**
         Find out the distance, on specified system and type, between two position objects

@@ -9082,12 +9082,16 @@ void Position::SetTrajectory(RMTrajectory* trajectory)
     s_trajectory_ = 0;
 }
 
-bool Position::relativeLaneId(Position* pos_b,  int &dLaneId) const
+bool Position::getRelativeLaneId(Position* pos_b, RoadPath* path, int &dLaneId, double *latDist) const
 {
 
-    RoadPath* path = new RoadPath(this, pos_b);
+    if (latDist != nullptr)
+    {
+        *latDist = pos_b->GetT();
+    }
 
-    int    laneIdB = pos_b->GetLaneId();
+    dLaneId = pos_b->GetLaneId();
+
 
     if (path->visited_.size() > 0)
     {
@@ -9121,20 +9125,90 @@ bool Position::relativeLaneId(Position* pos_b,  int &dLaneId) const
         bool isHeadToHead = isPathForward && isConnectedToEnd;
         bool isToeToToe   = isPathBackward && isConnectedToStart;
 
-        // If start and end roads are oppoite directed, inverse one side for delta calculations
+        // If start and end roads are oppotite directed, inverse one side for delta calculations
         if (isHeadToHead || isToeToToe)
         {
-            laneIdB = -laneIdB;
+            dLaneId = -dLaneId;
+            if (latDist != nullptr)
+            {
+                *latDist      = -(*latDist);
+            }
+
         }
     }
 
-    dLaneId = -SIGN(GetLaneId()) * (laneIdB - GetLaneId());
-    delete path;
+    // calculate delta lane id and lateral position
+    dLaneId = -SIGN(GetLaneId()) * (dLaneId - GetLaneId());
+    if (latDist != nullptr)
+    {
+        *latDist      = -SIGN(GetLaneId()) * (*latDist - GetT());
+    }
+
+    #if 0  // Change to 1 to print some info on stdout - e.g. for debugging
+            printf("Dist %.2f Path (reversed): %d", dist, pos_b.GetTrackId());
+            if (path->visited_.size() > 0)
+            {
+                RoadPath::PathNode* node = path->visited_.back();
+
+                while (node)
+                {
+                    if (node->fromRoad != 0)
+                    {
+                        printf(" <- %d", node->fromRoad->GetId());
+                    }
+                    node = node->previous;
+                }
+            }
+            printf("\n");
+    #endif
 
     return true;
+
 }
 
 bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
+{
+    double dist = 0;
+    bool   found;
+
+    RoadPath* path = new RoadPath(this, pos_b);
+    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && dist < maxDist);
+    if (found)
+    {
+        int    laneIdB;
+        double tB;
+        diff.ds = dist;
+
+        if (getRelativeLaneId(pos_b, path, laneIdB, &tB) == true)
+        {
+            // calculate delta lane id and lateral position
+            diff.dLaneId = laneIdB;
+            diff.dt      = tB;
+        }
+        else // no valid node found
+        {
+            diff.dLaneId = LARGE_NUMBER_INT;
+            diff.dt      = LARGE_NUMBER;
+        }
+
+
+    }
+    else  // no valid route found
+    {
+        diff.dLaneId = LARGE_NUMBER_INT;
+        diff.ds      = LARGE_NUMBER;
+        diff.dt      = LARGE_NUMBER;
+    }
+
+    getRelativeDistance(pos_b->GetX(), pos_b->GetY(), diff.dx, diff.dy);
+
+    delete path;
+
+    return found;
+}
+
+
+bool Position::DeltaOld(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
 {
     double dist = 0;
     bool   found;
