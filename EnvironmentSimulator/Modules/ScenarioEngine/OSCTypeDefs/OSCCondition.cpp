@@ -1508,8 +1508,8 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
         {
             refObject_ = storyBoard->entities_->object_[j];
             if ((refObject_ == entityObject) ||
-                ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))) ||
-                ((SIGN(entityObject->pos_.GetLaneId()) != SIGN(refObject_->pos_.GetLaneId())) && (!oppositeLanes_)))
+                ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))))
+                // ((SIGN(entityObject->pos_.GetLaneId()) != SIGN(refObject_->pos_.GetLaneId())) && (!oppositeLanes_)))
             { // ignore the entity which in triggering itself, entity which in not in reference entity list, opposite lane entity.
                 continue;
             }
@@ -1547,9 +1547,6 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 if (!objFound)
                 { // Accept entity which is only when outside clearance distance in required lanes
                     visitedObj_count += 1;
-                    LOG("Name:%s", refObject_->GetName().c_str());
-                    LOG("Relative distance T:%f", refObject_->pos_.GetS());
-                    LOG("Relative distance S:%f", refObject_->pos_.GetT());
                 }
             }
 

@@ -3001,7 +3001,6 @@ namespace roadmanager
         @return true if position found and parameter values are valid, else false
         */
         bool Delta(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
-        bool DeltaOld(Position *pos_b, PositionDiff &diff, bool bothDirections = true, double maxDist = LARGE_NUMBER) const;
 
         /**
         Find out the distance, on specified system and type, between two position objects

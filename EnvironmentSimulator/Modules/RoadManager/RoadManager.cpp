@@ -9144,6 +9144,10 @@ bool Position::getRelativeLaneId(Position* pos_b, RoadPath* path, int &dLaneId, 
         *latDist      = -SIGN(GetLaneId()) * (*latDist - GetT());
     }
 
+    if (SIGN(GetLaneId()) != SIGN(pos_b->GetLaneId()))
+    {
+        dLaneId = dLaneId > 0? dLaneId - 1 : dLaneId + 1;
+    }
     #if 0  // Change to 1 to print some info on stdout - e.g. for debugging
             printf("Dist %.2f Path (reversed): %d", dist, pos_b.GetTrackId());
             if (path->visited_.size() > 0)
@@ -9207,96 +9211,6 @@ bool Position::Delta(Position* pos_b, PositionDiff& diff, bool bothDirections, d
     return found;
 }
 
-
-bool Position::DeltaOld(Position* pos_b, PositionDiff& diff, bool bothDirections, double maxDist) const
-{
-    double dist = 0;
-    bool   found;
-
-    RoadPath* path = new RoadPath(this, pos_b);
-    found          = (path->Calculate(dist, bothDirections, maxDist) == 0 && dist < maxDist);
-    if (found)
-    {
-        int    laneIdB = pos_b->GetLaneId();
-        double tB      = pos_b->GetT();
-
-        if (path->visited_.size() > 0)
-        {
-            RoadPath::PathNode* lastNode  = path->visited_.back();
-            RoadPath::PathNode* firstNode = path->firstNode_;
-            if (firstNode == nullptr)
-            {
-                LOG("Missing first node in path");
-                return false;
-            }
-            if (lastNode == nullptr)
-            {
-                LOG("Missing last node in path");
-                return false;
-            }
-            bool isPathForward         = firstNode->link->GetType() == LinkType::SUCCESSOR;
-            bool isPathBackward        = firstNode->link->GetType() == LinkType::PREDECESSOR;
-            bool isConnectedToEnd      = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_END;
-            bool isConnectedToStart    = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_START;
-            bool isConnectedToJunction = lastNode->link->GetContactPointType() == ContactPointType::CONTACT_POINT_JUNCTION;
-            if (isConnectedToJunction)
-            {
-                Road*     lastNodeRoad = lastNode->fromRoad;
-                Road*     lastRoad     = GetRoadById(pos_b->GetTrackId());
-                RoadLink* linkPred     = lastRoad->GetLink(LinkType::PREDECESSOR);
-                RoadLink* linkSucc     = lastRoad->GetLink(LinkType::SUCCESSOR);
-                isConnectedToStart     = linkPred && lastNodeRoad && lastNodeRoad->GetId() == linkPred->GetElementId();
-                isConnectedToEnd       = linkSucc && lastNodeRoad && lastNodeRoad->GetId() == linkSucc->GetElementId();
-            }
-
-            bool isHeadToHead = isPathForward && isConnectedToEnd;
-            bool isToeToToe   = isPathBackward && isConnectedToStart;
-
-            // If start and end roads are oppotite directed, inverse one side for delta calculations
-            if (isHeadToHead || isToeToToe)
-            {
-                laneIdB = -laneIdB;
-                tB      = -tB;
-            }
-        }
-
-        // calculate delta lane id and lateral position
-        diff.dLaneId = -SIGN(GetLaneId()) * (laneIdB - GetLaneId());
-        diff.dt      = -SIGN(GetLaneId()) * (tB - GetT());
-
-        diff.ds = dist;
-
-#if 0  // Change to 1 to print some info on stdout - e.g. for debugging
-		printf("Dist %.2f Path (reversed): %d", dist, pos_b.GetTrackId());
-		if (path->visited_.size() > 0)
-		{
-			RoadPath::PathNode* node = path->visited_.back();
-
-			while (node)
-			{
-				if (node->fromRoad != 0)
-				{
-					printf(" <- %d", node->fromRoad->GetId());
-				}
-				node = node->previous;
-			}
-		}
-		printf("\n");
-#endif
-    }
-    else  // no valid route found
-    {
-        diff.dLaneId = 0;
-        diff.ds      = LARGE_NUMBER;
-        diff.dt      = LARGE_NUMBER;
-    }
-
-    getRelativeDistance(pos_b->GetX(), pos_b->GetY(), diff.dx, diff.dy);
-
-    delete path;
-
-    return found;
-}
 
 int Position::Distance(Position* pos_b, CoordinateSystem cs, RelativeDistanceType relDistType, double& dist, double maxDist)
 {
