@@ -1520,7 +1520,6 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 LOG("Road ID %d", entityObject->pos_.GetTrackId());
                 return -1;
             }
-            // int numOfLanes = road->GetNumberOfDrivingLanes(entityObject->pos_.GetS());
 
             roadmanager::LaneSection* lsec = road->GetLaneSectionByIdx(road->GetLaneSectionIdxByS(entityObject->pos_.GetS()));
 
@@ -1564,7 +1563,7 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                     }
                     else
                     {  // add extra 1 in lane id to compensate center lane
-                        laneIds_temp.push_back(laneId + kk - 1);
+                        laneIds_temp.push_back(laneId + kk + 1);
                         oppLane = true;
                     }
                 }
