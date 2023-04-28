@@ -426,6 +426,9 @@ namespace scenarioengine
         }
         roadmanager::Position* pos_;
         void                   Log();
+        std::vector<int>       laneIds;
+        std::vector<int>       laneIds_temp;
+        std::vector<int>       laneIds_relative;
     };
     class TrigByStandStill : public TrigByEntity
     {

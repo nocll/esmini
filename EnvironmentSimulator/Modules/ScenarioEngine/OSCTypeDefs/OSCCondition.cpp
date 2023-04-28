@@ -1494,25 +1494,42 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
     (void)sim_time;
 
     triggered_by_entities_.clear();
+    laneIds.clear();
+    laneIds_temp.clear();
+    laneIds_relative.clear();
 
     bool   result   = false;
     bool   objFound = false;
     double maxDist  = MAX(distanceForward_, distanceBackward_);
+
+    roadmanager::OpenDrive* odr = roadmanager::Position::GetOpenDrive();
 
     for (size_t i = 0; i < triggering_entities_.entity_.size(); i++)
     {
         Object* entityObject = triggering_entities_.entity_[i].object_;
 
         Object* refObject_;
-        result = false;
+        int     laneId = entityObject->pos_.GetLaneId();
+        result         = false;
 
-        for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
+        if (odr != NULL)
         {
-            refObject_ = storyBoard->entities_->object_[j];
-            if ((refObject_ == entityObject) ||
-                ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))))
-            {  // ignore the entity which in triggering itself, entity which in not in reference entity list
-                continue;
+            roadmanager::Road* road = odr->GetRoadById(entityObject->pos_.GetTrackId());
+            if (road == nullptr)
+            {
+                LOG("Road ID %d", entityObject->pos_.GetTrackId());
+                return -1;
+            }
+            // int numOfLanes = road->GetNumberOfDrivingLanes(entityObject->pos_.GetS());
+
+            roadmanager::LaneSection* lsec = road->GetLaneSectionByIdx(road->GetLaneSectionIdxByS(entityObject->pos_.GetS()));
+
+            for (int k = 0; k < lsec->GetNumberOfLanes(); k++)
+            {  // find all the driving lanes in the road
+                if (lsec->GetLaneByIdx(k)->IsDriving())
+                {
+                    laneIds.push_back(lsec->GetLaneIdByIdx(k));
+                }
             }
 
             if (from_ > to_)
@@ -1520,53 +1537,140 @@ bool TrigByRelativeClearance::CheckCondition(StoryBoard* storyBoard, double sim_
                 LOG_AND_QUIT("QUITTING, Wrong from and to value in RelativeLaneRange element");
             }
 
-            PositionDiff diff;
-            if (freeSpace_)
+            // first filter the required lanes to be checked from scenario
+            bool oppLane = false;
+            if (laneId > 0)  // for positive lane ids
             {
-                objFound = (entityObject->FreeSpaceDistanceObjectRoadLane(refObject_, &diff, CoordinateSystem::CS_ROAD) == 0);
+                for (int kk = from_; kk <= to_; ++kk)
+                {
+                    if (!(laneId - kk == 0) && !oppLane)
+                    {
+                        laneIds_temp.push_back(laneId - kk);
+                    }
+                    else
+                    {  // add extra 1 in lane id to compensate center lane
+                        laneIds_temp.push_back(laneId - kk - 1);
+                        oppLane = true;
+                    }
+                }
             }
-            else
+            else if (laneId < 0)  // for negative lane ids
             {
-                objFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+                for (int kk = from_; kk <= to_; ++kk)
+                {
+                    if (!(laneId + kk == 0) && !oppLane)
+                    {
+                        laneIds_temp.push_back(laneId + kk);
+                    }
+                    else
+                    {  // add extra 1 in lane id to compensate center lane
+                        laneIds_temp.push_back(laneId + kk - 1);
+                        oppLane = true;
+                    }
+                }
             }
 
-            if (objFound)
-            {
-                if (diff.ds < -distanceBackward_ || diff.ds > distanceForward_)
+            if (laneId < 0 && !oppositeLanes_)
+            {  // remove all positive lanes if entityObject in negative lane
+                for (unsigned int l = 0; l < laneIds_temp.size(); ++l)
                 {
-                    // ds is not within range (-distanceBackward_ : distanceForward_)
-                    objFound = false;
+                    if (laneIds_temp.at(l) > 0)
+                    {
+                        // remove element if positive
+                        laneIds_temp.erase(laneIds_temp.begin() + l);
+                        --l;
+                    }
+                }
+            }
+            else if (laneId > 0 && !oppositeLanes_)
+            {  // remove all negative lanes if entityObject in positive lane
+                for (unsigned int ll = 0; ll < laneIds_temp.size(); ++ll)
+                {
+                    if (laneIds_temp.at(ll) < 0)
+                    {
+                        // remove element if negative
+                        laneIds_temp.erase(laneIds_temp.begin() + ll);
+                        --ll;
+                    }
+                }
+            }
+
+            // remove lanes which is not available in road.
+            for (unsigned int lll = 0; lll < laneIds_temp.size(); ++lll)
+            {
+                if ((std::find(laneIds.begin(), laneIds.end(), laneIds_temp.at(lll)) == laneIds.end()))
+                {
+                    // remove element if negative
+                    laneIds_temp.erase(laneIds_temp.begin() + lll);
+                    --lll;
+                }
+            }
+            if (laneIds_temp.size() == 0)
+            {
+                break;  // no lanes to check
+            }
+
+            // find the relative lane id with entityObject
+            for (size_t kkk = 0; kkk < laneIds_temp.size(); ++kkk)
+            {
+                laneIds_relative.push_back(laneIds_temp[kkk] - laneId);
+            }
+
+            for (size_t j = 0; j < storyBoard->entities_->object_.size(); j++)
+            {
+                refObject_ = storyBoard->entities_->object_[j];
+                if ((refObject_ == entityObject) ||
+                    ((objects_.size() != 0) && ((std::find(objects_.begin(), objects_.end(), refObject_) == objects_.end()))))
+                {  // ignore the entity which in triggering itself, entity which in not in reference entity list
+                    continue;
+                }
+
+                PositionDiff diff;
+                if (freeSpace_)
+                {
+                    objFound = (entityObject->FreeSpaceDistanceObjectRoadLane(refObject_, &diff, CoordinateSystem::CS_ROAD) == 0);
                 }
                 else
                 {
-                    // found object is within specified distance range, check lane range and opposite direction condition
-                    if ((diff.dLaneId >= from_) && (diff.dLaneId <= to_) &&
-                        !(!oppositeLanes_ && diff.dOppLane))  // reject objects in opposite lane if we don't want them
+                    objFound = entityObject->pos_.Delta(&refObject_->pos_, diff, true, maxDist);
+                }
+
+                if (objFound)
+                {
+                    if (diff.ds < -distanceBackward_ || diff.ds > distanceForward_)
                     {
-                        // We found at least ONE object in the specified clearance area (lane and distance range)
-                        break;
+                        // ds is not within range (-distanceBackward_ : distanceForward_)
+                        objFound = false;
                     }
                     else
-                    {  // ds is within range but not within lane range and opposite direction condition
-                        objFound = false;
+                    {
+                        // found object is within specified distance range
+                        if (std::find(laneIds_relative.begin(), laneIds_relative.end(), diff.dLaneId) != laneIds_relative.end())
+                        {
+                            // We found at least ONE object in the specified clearance area (lane and distance range)
+                            break;
+                        }
+                        else
+                        {  // ds is within range but not within lane range and opposite direction condition
+                            objFound = false;
+                        }
                     }
                 }
             }
-        }
+            if (!objFound)
+            {
+                result = true;
+            }
 
-        if (!objFound)
-        {
-            result = true;
-        }
+            if (result == true)
+            {
+                triggered_by_entities_.push_back(triggering_entities_.entity_[i].object_);
+            }
 
-        if (result == true)
-        {
-            triggered_by_entities_.push_back(triggering_entities_.entity_[i].object_);
-        }
-
-        if (EvalDone(result, triggering_entity_rule_))
-        {
-            break;
+            if (EvalDone(result, triggering_entity_rule_))
+            {
+                break;
+            }
         }
     }
     return result;
