@@ -1642,6 +1642,68 @@ namespace roadmanager
         }
     };
 
+    class CornerReference
+    {
+    private:
+        std::vector<double> cornerReference_;
+
+    public:
+        CornerReference(double cornerReference) : cornerReference_(cornerReference)
+        {
+        }
+    };
+
+    class Marking
+    {
+    private:
+        RoadMarkColor color_str_;
+        double        width_, z_offset_, spaceLength_, lineLength_, startOffset_, stopOffset_;
+
+    public:
+        Marking(RoadMarkColor color_str, double width, double z_offset, double spaceLength, double lineLength, double startOffset, double stopOffset)
+            : color_str_(color_str),
+              width_(width),
+              z_offset_(z_offset),
+              spaceLength_(spaceLength),
+              lineLength_(lineLength),
+              startOffset_(startOffset),
+              stopOffset_(stopOffset)
+        {
+        }
+
+        std::vector<CornerReference *> cornerReference_;
+
+        ~Marking()
+        {
+            for (size_t i = 0; i < cornerReference_.size(); i++)
+                delete (cornerReference_[i]);
+            cornerReference_.clear();
+        }
+
+        void AddCornerReference(CornerReference *cornerReference)
+        {
+            cornerReference_.push_back(cornerReference);
+        }
+    };
+
+    class Markings
+    {
+    public:
+        std::vector<Marking *> marking_;
+
+        ~Markings()
+        {
+            for (size_t i = 0; i < marking_.size(); i++)
+                delete (marking_[i]);
+            marking_.clear();
+        }
+
+        void AddMarking(Marking *Marking)
+        {
+            marking_.push_back(Marking);
+        }
+    };
+
     class Repeat
     {
     public:
@@ -1928,6 +1990,10 @@ namespace roadmanager
         {
             outlines_.push_back(outline);
         }
+        void AddMarkings(Markings *markings)
+        {
+            markings_.push_back(markings);
+        }
         void SetRepeat(Repeat *repeat);
         void AddRepeat(Repeat *repeat)
         {
@@ -1957,22 +2023,23 @@ namespace roadmanager
         }
 
     private:
-        std::string            name_;
-        ObjectType             type_;
-        int                    id_;
-        double                 s_;
-        double                 t_;
-        double                 z_offset_;
-        Orientation            orientation_;
-        double                 length_;
-        double                 height_;
-        double                 width_;
-        double                 heading_;
-        double                 pitch_;
-        double                 roll_;
-        std::vector<Outline *> outlines_;
-        Repeat                *repeat_;
-        std::vector<Repeat *>  repeats_;
+        std::string             name_;
+        ObjectType              type_;
+        int                     id_;
+        double                  s_;
+        double                  t_;
+        double                  z_offset_;
+        Orientation             orientation_;
+        double                  length_;
+        double                  height_;
+        double                  width_;
+        double                  heading_;
+        double                  pitch_;
+        double                  roll_;
+        std::vector<Outline *>  outlines_;
+        Repeat                 *repeat_;
+        std::vector<Repeat *>   repeats_;
+        std::vector<Markings *> markings_;
     };
 
     enum class SpeedUnit
