@@ -134,8 +134,8 @@
             </object>
         </objects>
         <signals>
-            <signal s="1.0000000000000000e+01" t="-0.0000000000000000e+00" id="1" name="274-50" dynamic="no" orientation="none" zOffset="0.0000000000000000e+00" type="110" country="de" countryRevision="2013" subtype="" value="4.0000000000000000e+00" unit="m" hOffset="0.0000000000000000e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00" height="0.01" width="10.40">
-                <reference elementType ="object" elementId="10"/>
+            <signal s="1.0000000000000000e+01" t="-0.0000000000000000e+00" id="1" name="Crosswalk" dynamic="no" orientation="none" zOffset="0.0000000000000000e+00" type="1000003" country="OpenDRIVE" countryRevision="2013" subtype="-1" value="4.0000000000000000e+00" unit="m" hOffset="0.0000000000000000e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00" height="0.01" width="10.40">
+                    <reference elementType ="object" elementId="10"/>
             </signal>
         </signals>
         <surface>

@@ -32,8 +32,10 @@
 	  </ControllerCatalog>
    </CatalogLocations>
    <RoadNetwork>
-      <LogicFile filepath="../xodr/straight_500m.xodr"/>
-      <SceneGraphFile filepath="../models/straight_500m.osgb"/>
+      <!-- <LogicFile filepath="../xodr/straight_500m.xodr"/>
+      <SceneGraphFile filepath="../models/straight_500m.osgb"/> -->
+      <!-- <LogicFile filepath="../xodr/Ex_Pedestrian_Crossing.xodr"/> -->
+      <LogicFile filepath="../xodr/Ex_Parkingspace_Rectangular.xodr"/>
    </RoadNetwork>
    <Entities>
       <ScenarioObject name="Ego">
@@ -45,8 +47,8 @@
                     <Property name="mode" value="override" />
                     <Property name="setSpeed" value="${$EgoSpeed / 3.6}" />
                 </Properties>
-            </Controller>            
-         </ObjectController>         
+            </Controller>
+         </ObjectController>
       </ScenarioObject>
       <ScenarioObject name="Target">
          <CatalogReference catalogName="VehicleCatalog" entryName="$TargetVehicle"/>
@@ -100,7 +102,7 @@
                         </SpeedActionTarget>
                      </SpeedAction>
                   </LongitudinalAction>
-               </PrivateAction>               
+               </PrivateAction>
             </Private>
          </Actions>
       </Init>
@@ -159,7 +161,7 @@
                            </Condition>
                         </ConditionGroup>
                      </StartTrigger>
-                  </Event>                 
+                  </Event>
                   <Event name="TargetBrakeEvent" priority="overwrite">
                      <Action name="TargetBrakeAction">
                         <PrivateAction>

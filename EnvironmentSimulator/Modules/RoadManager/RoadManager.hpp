@@ -1653,15 +1653,26 @@ namespace roadmanager
         }
     };
 
+    class ParkingSpace
+    {
+    public:
+        std::string access_;
+
+        ParkingSpace(std::string access): access_(access){}
+
+    };
+
     class Marking
     {
     private:
         RoadMarkColor color_str_;
+        std::string side_;
         double        width_, z_offset_, spaceLength_, lineLength_, startOffset_, stopOffset_;
 
     public:
-        Marking(RoadMarkColor color_str, double width, double z_offset, double spaceLength, double lineLength, double startOffset, double stopOffset)
-            : color_str_(color_str),
+        Marking(std::string side, RoadMarkColor color_str, double width, double z_offset, double spaceLength, double lineLength, double startOffset, double stopOffset)
+            : side_(side),
+              color_str_(color_str),
               width_(width),
               z_offset_(z_offset),
               spaceLength_(spaceLength),
@@ -1990,6 +2001,10 @@ namespace roadmanager
         {
             outlines_.push_back(outline);
         }
+        void AddParkingSpace(ParkingSpace *parkingSpace)
+        {
+            parkingSpaces_.push_back(parkingSpace);
+        }
         void AddMarkings(Markings *markings)
         {
             markings_.push_back(markings);
@@ -2040,6 +2055,8 @@ namespace roadmanager
         Repeat                 *repeat_;
         std::vector<Repeat *>   repeats_;
         std::vector<Markings *> markings_;
+        ParkingSpace           *parkingSpace_;
+        std::vector<ParkingSpace *>   parkingSpaces_;
     };
 
     enum class SpeedUnit
