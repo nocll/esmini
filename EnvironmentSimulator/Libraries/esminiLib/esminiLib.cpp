@@ -223,11 +223,13 @@ static int copyVehicleLightStatesListFromScenarioEngine(SE_VehicleLightState *st
         return -1;
     }
 
-    states->colorName = obj->vehicleLightActionStatusList[lightIndex].colorName;
+    states->colorName = static_cast<int>(obj->vehicleLightActionStatusList[lightIndex].colorName);
     states->intensity = obj->vehicleLightActionStatusList[lightIndex].luminousIntensity;
-    states->lightMode = obj->vehicleLightActionStatusList[lightIndex].mode;
+    states->lightMode = static_cast<int>(obj->vehicleLightActionStatusList[lightIndex].mode);
     states->lightType = obj->vehicleLightActionStatusList[lightIndex].type;
-    states->rgb       = obj->vehicleLightActionStatusList[lightIndex].rgb;
+    states->rgb[0]       = obj->vehicleLightActionStatusList[lightIndex].rgb[0];
+    states->rgb[1]       = obj->vehicleLightActionStatusList[lightIndex].rgb[1];
+    states->rgb[2]       = obj->vehicleLightActionStatusList[lightIndex].rgb[2];
 
     return 0;
 }
@@ -1099,6 +1101,8 @@ extern "C"
             }
 
             scenarioengine::OSCBoundingBox bb = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+
+
             if (player->scenarioGateway->reportObject(object_id,
                                                       name,
                                                       object_type,
