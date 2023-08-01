@@ -9,7 +9,6 @@
 #include "osi_common.pb.h"
 #include "osi_object.pb.h"
 #include "osi_groundtruth.pb.h"
-
 #include "EsminiOsiSource.h"
 
 /*
@@ -102,6 +101,70 @@ void encode_pointer_to_integer(const void* ptr,fmi2Integer& hi,fmi2Integer& lo)
 #endif
 }
 
+int EsminiOsiSource::get_fmi_traffic_update_in(osi3::TrafficUpdate& data)
+{
+    if (integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_SIZE_IDX] > 0)
+    {
+        void* buffer = decode_integer_to_pointer(integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_BASEHI_IDX], integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_BASELO_IDX]);
+        normal_log("OSMP", "Got %08X %08X, reading from %p ...", integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_BASEHI_IDX], integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_BASELO_IDX], buffer);
+        data.ParseFromArray(buffer, integer_vars[FMI_INTEGER_TRAFFICUPDATE_IN_SIZE_IDX]);
+        return 0;
+    }
+    return -1;
+}
+
+int EsminiOsiSource::process_fmi_traffic_update_input(osi3::TrafficUpdate& data)
+{
+    if (data.update_size() > 0)
+    {
+      // Do something with traffic update
+      std::cerr <<"Processing the OSI inputs" << std::endl;
+      
+      float dt = 0.0f;
+      dt = SE_GetSimTimeStep();
+      osi3::Timestamp timestamp = data.timestamp();
+      float time = (float)data.timestamp().seconds() + (float)data.timestamp().nanos() * (float)1E-9;
+      // Should we add '+ dt' ?
+      // Update based on motion states
+      osi3::MovingObject agent = data.update(0);
+      int agent_id = (int)agent.id().value(); // Does the OSI 'id' number match the esmini 'id'?
+      /* Position control */
+      SE_ReportObjectPosXYH(agent_id, time,
+                        (float)agent.base().position().x(),
+                        (float)agent.base().position().y(),
+                        (float)agent.base().orientation().yaw()
+      );
+      /* Speed control */
+      float agent_speed = (float)agent.base().velocity().x();
+      SE_ReportObjectSpeed(agent_id, agent_speed); // Note: OSI does not have "speed" field
+      /* Velocity control */
+      SE_ReportObjectVel(agent_id, time, 
+                        (float)agent.base().velocity().x(),
+                        (float)agent.base().velocity().y(),
+                        (float)agent.base().velocity().z()
+      );
+
+      /**
+       * Update based on driving inputs
+       * TODO: How to get vehicle handle based on id? 
+       *       Maybe vehicle must be created during doExitInitializationMode.
+       *       vehicleHandle would have to become class member or input arg. void* vehicleHandle = 0;
+      */
+      if (data.internal_state_size() > 0)
+      {
+        osi3::HostVehicleData agent_internal = data.internal_state(0);
+        int host_id = agent_internal.host_vehicle_id().value();
+        double osi_throttle = agent_internal.vehicle_powertrain().pedal_position_acceleration();
+        double osi_brake = agent_internal.vehicle_brake_system().pedal_position_brake();
+        double esmini_throttle = osi_throttle - osi_brake;
+        double steering = agent_internal.vehicle_steering().vehicle_steering_wheel().angle();
+        // SE_SimpleVehicleControlAnalog(this->ctrledVehicleHandle, dt, esmini_throttle, steering);
+      }
+      return 0;
+    }
+    return -1;
+}
+
 void EsminiOsiSource::set_fmi_sensor_view_out(const osi3::SensorView& data)
 {
   data.SerializeToString(currentBuffer);
@@ -173,6 +236,19 @@ fmi2Status EsminiOsiSource::doExitInitializationMode()
     std::cerr <<"Failed to initialize the scenario" << std::endl;
     return fmi2Error;
   }
+  /**
+   * TODO: Maybe we need to initialize the external vehicle model here.
+   *       The 'id' of the controlled vehicle could be an FMU parameter (id=-1 := None)
+   *       Some variables would have to be class members
+   *       See example: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/code-examples/test-driver/test-driver.cpp
+  */
+  // Initialize the vehicle model, fetch initial state from the scenario
+  int agent_esmini_id = 0;
+  SE_ScenarioObjectState objectState;
+  SE_GetObjectState(agent_esmini_id, &objectState);
+
+  void* vehicleHandle = 0;
+  vehicleHandle = SE_SimpleVehicleCreate(objectState.x, objectState.y, objectState.h, 4.0, 0.0);
 
   SE_UpdateOSIGroundTruth();
 
@@ -182,6 +258,19 @@ fmi2Status EsminiOsiSource::doExitInitializationMode()
 fmi2Status EsminiOsiSource::doCalc(fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint)
 {
   DEBUGBREAK();
+
+  osi3::TrafficUpdate current_in;
+  if (get_fmi_traffic_update_in(current_in) != 0)
+  {
+    std::cerr <<"Failed to get OSI Traffic Update" << std::endl;
+    return fmi2Error;
+  }
+  
+  if (process_fmi_traffic_update_input(current_in) != 0)
+  {
+    std::cerr <<"Failed to process OSI Traffic Update into esmini" << std::endl;
+    return fmi2Error;
+  }
 
   if (SE_StepDT((float)communicationStepSize) != 0)
   {
@@ -247,6 +336,7 @@ EsminiOsiSource::EsminiOsiSource(fmi2String theinstanceName, fmi2Type thefmuType
   loggingCategories.insert("FMI");
   loggingCategories.insert("OSMP");
   loggingCategories.insert("OSI");
+  // ctrledVehicleHandle = 0;
 }
 
 EsminiOsiSource::~EsminiOsiSource()
