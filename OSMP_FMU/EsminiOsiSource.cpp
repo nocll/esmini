@@ -167,7 +167,7 @@ int EsminiOsiSource::process_fmi_traffic_update_input(osi3::TrafficUpdate& data)
         );
         std::cout << "Acceleration control" << std::endl;
       }
-
+      // SE_RegisterObjectCallback
       process = 0;
     }
     else {
@@ -270,7 +270,26 @@ fmi2Status EsminiOsiSource::doExitInitializationMode()
     std::cerr << "No OpenScenario file selected!" << std::endl;
     return fmi2Error;
   }
+
+#ifdef OSMP_FMU_DEBUG
+  const char* es_args[15] = {"--osc",
+                            xosc_path.c_str(),
+                            "--window", "100", "100", "1000", "500",
+                            "--record",
+                            "esmini_rec.dat",
+                            "--csv_logger",
+                            "esmini_csv.csv",
+                            "--osi_file",
+                            "esmini_gt.osi",
+                            "--logfile_path",
+                            "esmini_log.log"};
+
+  if (SE_InitWithArgs(sizeof(es_args) / sizeof(char*), es_args) != 0)
+#else 
   if (SE_Init(xosc_path.c_str(), 0, fmi_use_viewer(), 0, 0) != 0)
+#endif
+  // if (SE_Init(xosc_path.c_str(), 0, fmi_use_viewer(), 0, 0) != 0)
+  // if (SE_InitWithArgs(sizeof(es_args) / sizeof(char*), es_args) != 0)
   {
     std::cerr <<"Failed to initialize the scenario" << std::endl;
     return fmi2Error;

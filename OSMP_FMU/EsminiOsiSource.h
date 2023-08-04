@@ -68,6 +68,8 @@ using namespace std;
 #define FMI_STRING_LAST_IDX FMI_STRING_XOSC_PATH_IDX
 #define FMI_STRING_VARS (FMI_STRING_LAST_IDX+1)
 
+// #define OSMP_FMU_DEBUG 1
+
 #include <iostream>
 #include <fstream>
 #include <string>
