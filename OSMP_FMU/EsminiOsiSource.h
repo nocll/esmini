@@ -199,7 +199,7 @@ protected:
     string string_vars[FMI_STRING_VARS];
     string* currentBuffer;
     string* lastBuffer;
-    // void* ctrledVehicleHandle;
+    void* ctrledVehicleHandle; // Attempt to control vehicle by steering & throttle cmmands through OSI
 
     /* Simple Accessors */
     fmi2Boolean fmi_valid() { return boolean_vars[FMI_BOOLEAN_VALID_IDX]; }
